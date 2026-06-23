@@ -1,0 +1,72 @@
+<h2>Question Router Homepage</h2>
+<p class="subtitle">Default route: "What changed this week?" Pick how that route should present the answer.</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Brief First</div>
+        <div class="mockup-body">
+          <div class="mock-nav">What changed this week? | History | Why | Providers</div>
+          <div class="mock-content">
+            <h3>This week's thesis</h3>
+            <div class="placeholder">A 2-minute synthesis of the week</div>
+            <div class="placeholder">Key event: model release -> architecture tag -> source</div>
+            <div class="placeholder">Key event: business move -> causal link -> confidence</div>
+            <div class="placeholder">Key event: paper -> trajectory -> why it matters</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Brief First</h3>
+      <p>Start with the week's thesis, then list the evidence as event cards. Best for fast comprehension.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Event Feed</div>
+        <div class="mockup-body">
+          <div class="mock-nav">What changed this week? | History | Why | Providers</div>
+          <div style="display:flex;gap:12px">
+            <div class="mock-sidebar">Filters<br>Models<br>Papers<br>Business<br>Infra</div>
+            <div class="mock-content">
+              <h3>Event cards</h3>
+              <div class="placeholder">Event card with tags and sources</div>
+              <div class="placeholder">Event card with tags and sources</div>
+              <div class="placeholder">Event card with tags and sources</div>
+              <div class="placeholder">Event card with tags and sources</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Event Feed</h3>
+      <p>Show all curated changes first, with filters. Best if you want breadth and scanning.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Three Lenses</div>
+        <div class="mockup-body">
+          <div class="mock-nav">What changed this week? | History | Why | Providers</div>
+          <div class="mock-content">
+            <h3>This week through 3 lenses</h3>
+            <div class="placeholder">Technical: architecture/model changes</div>
+            <div class="placeholder">Commercial: funding/chips/providers</div>
+            <div class="placeholder">Historical: where these fit in the arc</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Three Lenses</h3>
+      <p>Split the week into technical, commercial, and historical views. Best for balanced thinking.</p>
+    </div>
+  </div>
+</div>
