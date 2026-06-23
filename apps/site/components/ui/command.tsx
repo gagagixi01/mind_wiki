@@ -4,7 +4,7 @@ import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -25,6 +25,7 @@ interface CommandDialogProps extends React.ComponentProps<typeof Dialog> {
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => (
   <Dialog {...props}>
     <DialogContent className="overflow-hidden p-0">
+      <DialogTitle className="sr-only">命令菜单</DialogTitle>
       <Command>{children}</Command>
     </DialogContent>
   </Dialog>

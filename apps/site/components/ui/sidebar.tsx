@@ -4,10 +4,15 @@ import * as React from "react";
 import { PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type SidebarContextValue = {
   open: boolean;
+  mobileOpen: boolean;
+  isMobile: boolean;
   setOpen: (open: boolean) => void;
+  setMobileOpen: (open: boolean) => void;
   toggleSidebar: () => void;
 };
 
@@ -33,7 +38,9 @@ function SidebarProvider({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const isMobile = useIsMobile();
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const open = openProp ?? uncontrolledOpen;
   const setOpen = React.useCallback(
     (value: boolean) => {
@@ -44,10 +51,17 @@ function SidebarProvider({
     },
     [onOpenChange, openProp]
   );
-  const toggleSidebar = React.useCallback(() => setOpen(!open), [open, setOpen]);
+  const toggleSidebar = React.useCallback(() => {
+    if (isMobile) {
+      setMobileOpen((value) => !value);
+      return;
+    }
+
+    setOpen(!open);
+  }, [isMobile, open, setOpen]);
 
   return (
-    <SidebarContext.Provider value={{ open, setOpen, toggleSidebar }}>
+    <SidebarContext.Provider value={{ open, mobileOpen, isMobile, setOpen, setMobileOpen, toggleSidebar }}>
       <div className={cn("group/sidebar-wrapper flex min-h-svh w-full bg-background", className)} data-sidebar-open={open} {...props}>
         {children}
       </div>
@@ -62,19 +76,35 @@ function Sidebar({
 }: React.ComponentProps<"aside"> & {
   side?: "left" | "right";
 }) {
-  const { open } = useSidebar();
+  const { open, mobileOpen, setMobileOpen } = useSidebar();
+  const desktopState = open ? "expanded" : "collapsed";
+
   return (
-    <aside
-      data-side={side}
-      data-state={open ? "expanded" : "collapsed"}
-      className={cn(
-        "hidden w-64 shrink-0 border-r bg-card text-card-foreground transition-[width] duration-200 md:block",
-        side === "right" && "order-last border-l border-r-0",
-        !open && "md:w-0 md:overflow-hidden md:border-0",
-        className
-      )}
-      {...props}
-    />
+    <>
+      <aside
+        data-side={side}
+        data-state={desktopState}
+        aria-hidden={!open}
+        className={cn(
+          "hidden w-64 shrink-0 border-r bg-card text-card-foreground transition-[width] duration-200 md:block",
+          side === "right" && "order-last border-l border-r-0",
+          !open && "md:w-0 md:overflow-hidden md:border-0",
+          className
+        )}
+        {...props}
+      >
+        {open ? props.children : null}
+      </aside>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side={side} className="w-72 p-0 md:hidden" aria-describedby="mobile-sidebar-description">
+          <SheetTitle className="sr-only">研究导航</SheetTitle>
+          <SheetDescription id="mobile-sidebar-description" className="sr-only">
+            AI 进展研究导航菜单
+          </SheetDescription>
+          <div className={cn("h-full bg-card text-card-foreground", className)}>{props.children}</div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 
