@@ -26,7 +26,7 @@ describe("content schemas", () => {
         }
       ],
       confidence: "likely",
-      watchlist: ["Watch benchmark replications."],
+      watchlist: true,
       providers: ["ExampleAI"],
       related_events: ["2026-05-20-previous-event"],
       causal_links: [
@@ -86,7 +86,7 @@ describe("content schemas", () => {
         }
       ],
       confidence: "observed",
-      watchlist: []
+      watchlist: true
     });
 
     expect(result.success).toBe(false);
@@ -94,6 +94,32 @@ describe("content schemas", () => {
       expect(result.error.issues.map((issue) => issue.path.join("."))).toEqual(
         expect.arrayContaining(["type", "trajectories.0"])
       );
+    }
+  });
+
+  it("rejects non-boolean event watchlist values", () => {
+    const result = eventSchema.safeParse({
+      id: "2026-06-01-invalid-watchlist",
+      title: "Invalid Watchlist",
+      date: "2026-06-01",
+      type: "architecture",
+      summary: "A summary.",
+      why_it_matters: "It should fail.",
+      trajectories: ["llm_architecture"],
+      sources: [
+        {
+          title: "Source",
+          url: "https://example.com/source",
+          source_type: "news"
+        }
+      ],
+      confidence: "observed",
+      watchlist: ["Watch benchmark replications."]
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.path.join("."))).toContain("watchlist");
     }
   });
 

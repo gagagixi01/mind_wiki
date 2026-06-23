@@ -38,7 +38,7 @@ function eventMdx(overrides: Record<string, unknown> = {}) {
       }
     ],
     confidence: "observed",
-    watchlist: ["Check independent replication."],
+    watchlist: true,
     ...overrides
   };
 
@@ -96,6 +96,18 @@ describe("approved content loaders", () => {
 
     await expect(loadApprovedEvents({ contentDir })).rejects.toThrow(
       /event\.mdx.*confidence.*Invalid enum value/
+    );
+  });
+
+  it("fails when event watchlist is not a boolean", async () => {
+    const contentDir = await makeContentRoot();
+    await writeFile(
+      join(contentDir, "approved", "events", "event.mdx"),
+      eventMdx({ watchlist: ["Check independent replication."] })
+    );
+
+    await expect(loadApprovedEvents({ contentDir })).rejects.toThrow(
+      /event\.mdx.*watchlist.*Expected boolean/
     );
   });
 

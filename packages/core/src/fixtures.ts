@@ -16,7 +16,7 @@ export const fixtureEvent = {
   trajectories: ["llm_architecture"],
   sources: [fixtureSource],
   confidence: "observed",
-  watchlist: ["Check independent replication."]
+  watchlist: true
 } satisfies Event;
 
 export const fixtureWeeklyBrief = {

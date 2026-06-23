@@ -75,7 +75,7 @@ export const eventSchema = z.object({
   trajectories: z.array(z.enum(trajectories)).min(1),
   sources: z.array(sourceSchema).min(1),
   confidence: z.enum(confidenceLevels),
-  watchlist: z.array(z.string()),
+  watchlist: z.boolean(),
   providers: z.array(z.string().min(1)).optional(),
   causal_links: z.array(causalLinkSchema).optional(),
   related_events: z.array(z.string().min(1)).optional()
