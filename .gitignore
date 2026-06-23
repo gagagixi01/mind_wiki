@@ -3,3 +3,20 @@
 **/.DS_Store
 ._*
 **/._*
+.gstack/
+
+# Dependencies and builds
+node_modules/
+.next/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Environment and local curation state
+.env*
+!.env.example
+.curation/
+
+# Playwright
+playwright-report/
+test-results/

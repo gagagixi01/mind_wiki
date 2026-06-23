@@ -1,0 +1,28 @@
+{
+  "name": "mind-wiki",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev:site": "pnpm --filter @mind-wiki/site dev",
+    "dev:workbench": "pnpm --filter @mind-wiki/workbench dev",
+    "build": "pnpm --filter @mind-wiki/core build && pnpm --filter @mind-wiki/curation build && pnpm --filter @mind-wiki/site build && pnpm --filter @mind-wiki/workbench build",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "lint": "pnpm -r lint",
+    "clean:appledouble": "node scripts/clean-appledouble.mjs"
+  },
+  "dependencies": {
+    "execa": "^9.6.0",
+    "gray-matter": "^4.0.3",
+    "openai": "^4.104.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.53.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

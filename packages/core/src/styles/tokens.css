@@ -1,0 +1,52 @@
+:root {
+  --font-sans: "Noto Sans SC", "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", "Cascadia Code", monospace;
+  --background: 210 20% 98%;
+  --foreground: 218 24% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 218 24% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 218 24% 12%;
+  --primary: 211 58% 24%;
+  --primary-foreground: 210 30% 98%;
+  --secondary: 210 18% 92%;
+  --secondary-foreground: 218 24% 16%;
+  --muted: 210 17% 94%;
+  --muted-foreground: 218 12% 40%;
+  --accent: 205 32% 91%;
+  --accent-foreground: 211 58% 22%;
+  --destructive: 0 68% 42%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 214 18% 84%;
+  --input: 214 18% 84%;
+  --ring: 211 58% 34%;
+  --confidence-high: 148 45% 32%;
+  --confidence-medium: 43 82% 38%;
+  --confidence-low: 0 68% 42%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 218 24% 9%;
+  --foreground: 210 24% 94%;
+  --card: 218 22% 12%;
+  --card-foreground: 210 24% 94%;
+  --popover: 218 22% 12%;
+  --popover-foreground: 210 24% 94%;
+  --primary: 207 56% 72%;
+  --primary-foreground: 218 24% 9%;
+  --secondary: 218 18% 18%;
+  --secondary-foreground: 210 24% 92%;
+  --muted: 218 18% 18%;
+  --muted-foreground: 214 12% 68%;
+  --accent: 206 26% 20%;
+  --accent-foreground: 207 56% 82%;
+  --destructive: 0 62% 48%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 218 16% 24%;
+  --input: 218 16% 24%;
+  --ring: 207 56% 68%;
+  --confidence-high: 148 42% 48%;
+  --confidence-medium: 43 82% 54%;
+  --confidence-low: 0 66% 58%;
+}
