@@ -15,11 +15,13 @@ export type ContentLoaderOptions = {
 export type EventContent = Event & {
   body: string;
   filePath: string;
+  relativePath: string;
 };
 
 export type WeeklyBriefContent = WeeklyBrief & {
   body: string;
   filePath: string;
+  relativePath: string;
 };
 
 export type ApprovedContent = {
@@ -42,6 +44,15 @@ export type ProbableDuplicateEvent = {
 const APPROVED_EVENT_DIR = ["approved", "events"] as const;
 const APPROVED_WEEK_DIR = ["approved", "weeks"] as const;
 const CONTENT_EXTENSIONS = new Set([".md", ".mdx"]);
+const DENIED_LOCAL_ARTIFACT_DIRS = new Set([
+  "drafts",
+  "raw",
+  "invalid",
+  "rejected",
+  "quality-reports",
+  "run-logs",
+  ".curation"
+]);
 
 function resolveContentDir(options: ContentLoaderOptions = {}) {
   return options.contentDir ?? join(options.rootDir ?? process.cwd(), "content");
@@ -49,6 +60,10 @@ function resolveContentDir(options: ContentLoaderOptions = {}) {
 
 function shouldIgnoreName(name: string) {
   return name.startsWith(".") || name.startsWith("._");
+}
+
+function shouldIgnoreDirectoryName(name: string) {
+  return shouldIgnoreName(name) || DENIED_LOCAL_ARTIFACT_DIRS.has(name);
 }
 
 function hasContentExtension(name: string) {
@@ -72,6 +87,9 @@ async function findContentFiles(dir: string): Promise<string[]> {
       .map(async (entry) => {
         const path = join(dir, entry.name);
         if (entry.isDirectory()) {
+          if (shouldIgnoreDirectoryName(entry.name)) {
+            return [];
+          }
           return findContentFiles(path);
         }
         if (entry.isFile() && hasContentExtension(entry.name)) {
@@ -102,11 +120,16 @@ async function parseFrontmatter<T>(
   filePath: string,
   contentDir: string,
   schema: z.ZodType<T>
-): Promise<T & { body: string; filePath: string }> {
+): Promise<T & { body: string; filePath: string; relativePath: string }> {
   const raw = await readFile(filePath, "utf8");
   const parsed = matter(raw);
-  const result = schema.safeParse(parsed.data);
   const displayPath = relative(contentDir, filePath) || filePath;
+
+  if (!raw.trimStart().startsWith("---")) {
+    throw new Error(`${displayPath}: missing frontmatter`);
+  }
+
+  const result = schema.safeParse(parsed.data);
 
   if (!result.success) {
     throw new Error(formatZodError(displayPath, result.error));
@@ -115,7 +138,8 @@ async function parseFrontmatter<T>(
   return {
     ...result.data,
     body: parsed.content,
-    filePath
+    filePath,
+    relativePath: displayPath
   };
 }
 
@@ -165,31 +189,34 @@ export function assertWeeklyEventIds(events: Event[], weeks: WeeklyBrief[]) {
     const referencedIds = [...week.headline_event_ids, ...week.watchlist_event_ids];
     const missingIds = referencedIds.filter((id) => !eventIds.has(id));
     if (missingIds.length > 0) {
-      const filePath = "filePath" in week && typeof week.filePath === "string" ? week.filePath : "weekly brief";
+      const filePath =
+        "relativePath" in week && typeof week.relativePath === "string"
+          ? week.relativePath
+          : "weekly brief";
       throw new Error(`${filePath}: unknown event IDs: ${[...new Set(missingIds)].join(", ")}`);
     }
   }
 }
 
 export function detectDuplicateSourceUrls(events: Event[]): DuplicateSourceUrl[] {
-  const groups = new Map<string, { eventIds: Set<string>; urls: Set<string> }>();
+  const groups = new Map<string, { eventIds: Set<string>; urls: string[] }>();
 
   for (const event of events) {
     for (const source of event.sources) {
       const normalizedUrl = normalizeSourceUrl(source.url);
-      const group = groups.get(normalizedUrl) ?? { eventIds: new Set<string>(), urls: new Set<string>() };
+      const group = groups.get(normalizedUrl) ?? { eventIds: new Set<string>(), urls: [] };
       group.eventIds.add(event.id);
-      group.urls.add(source.url);
+      group.urls.push(source.url);
       groups.set(normalizedUrl, group);
     }
   }
 
   return [...groups.entries()]
-    .filter(([, group]) => group.eventIds.size > 1)
+    .filter(([, group]) => group.urls.length > 1)
     .map(([normalizedUrl, group]) => ({
       normalizedUrl,
       eventIds: [...group.eventIds].sort(),
-      urls: [...group.urls]
+      urls: group.urls
     }))
     .sort((a, b) => a.normalizedUrl.localeCompare(b.normalizedUrl));
 }

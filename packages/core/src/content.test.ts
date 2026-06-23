@@ -75,6 +75,25 @@ describe("approved content loaders", () => {
     expect(events[0]?.body.trim()).toBe("Body copy");
   });
 
+  it("ignores local artifact directories misplaced below approved event paths", async () => {
+    const contentDir = await makeContentRoot();
+    await mkdir(join(contentDir, "approved", "events", "drafts"), { recursive: true });
+    await mkdir(join(contentDir, "approved", "events", "nested", "raw"), { recursive: true });
+    await writeFile(join(contentDir, "approved", "events", "event.mdx"), eventMdx());
+    await writeFile(
+      join(contentDir, "approved", "events", "drafts", "foo.mdx"),
+      eventMdx({ id: "ignored-drafts" })
+    );
+    await writeFile(
+      join(contentDir, "approved", "events", "nested", "raw", "foo.mdx"),
+      eventMdx({ id: "ignored-raw" })
+    );
+
+    const events = await loadApprovedEvents({ contentDir });
+
+    expect(events.map((event) => event.id)).toEqual(["2026-06-01-transformer-update"]);
+  });
+
   it("fails with a clear message when required event frontmatter is missing", async () => {
     const contentDir = await makeContentRoot();
     await writeFile(
@@ -84,6 +103,27 @@ describe("approved content loaders", () => {
 
     await expect(loadApprovedEvents({ contentDir })).rejects.toThrow(
       /event\.mdx.*title.*Required/
+    );
+  });
+
+  it("fails with an explicit message when an event file has no frontmatter block", async () => {
+    const contentDir = await makeContentRoot();
+    await writeFile(join(contentDir, "approved", "events", "event.mdx"), "Body copy only");
+
+    await expect(loadApprovedEvents({ contentDir })).rejects.toThrow(
+      /^approved\/events\/event\.mdx: missing frontmatter/
+    );
+  });
+
+  it("fails when event frontmatter has unknown keys", async () => {
+    const contentDir = await makeContentRoot();
+    await writeFile(
+      join(contentDir, "approved", "events", "event.mdx"),
+      eventMdx({ provider: ["ExampleAI"], causal_link: [] })
+    );
+
+    await expect(loadApprovedEvents({ contentDir })).rejects.toThrow(
+      /event\.mdx.*Unrecognized key\(s\) in object: 'provider', 'causal_link'/
     );
   });
 
@@ -120,7 +160,7 @@ describe("approved content loaders", () => {
     );
 
     await expect(loadApprovedContent({ contentDir })).rejects.toThrow(
-      /week\.mdx.*unknown event IDs: missing-event/
+      /^approved\/weeks\/week\.mdx: unknown event IDs: missing-event/
     );
   });
 
@@ -166,6 +206,36 @@ describe("duplicate detection", () => {
         normalizedUrl: "https://example.com/research",
         eventIds: ["2026-06-01-transformer-update", "2026-06-02-provider-release"],
         urls: ["https://example.com/research#section", "https://example.com/research/"]
+      }
+    ]);
+  });
+
+  it("reports duplicate source URLs repeated within the same event", async () => {
+    const contentDir = await makeContentRoot();
+    await writeFile(
+      join(contentDir, "approved", "events", "event.mdx"),
+      eventMdx({
+        sources: [
+          {
+            title: "Research note",
+            url: "https://example.com/research",
+            source_type: "paper"
+          },
+          {
+            title: "Research note duplicate",
+            url: "https://example.com/research",
+            source_type: "paper"
+          }
+        ]
+      })
+    );
+
+    const events = await loadApprovedEvents({ contentDir });
+    expect(detectDuplicateSourceUrls(events)).toEqual([
+      {
+        normalizedUrl: "https://example.com/research",
+        eventIds: ["2026-06-01-transformer-update"],
+        urls: ["https://example.com/research", "https://example.com/research"]
       }
     ]);
   });
