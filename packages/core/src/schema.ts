@@ -1,0 +1,128 @@
+import { z } from "zod";
+
+export const eventTypes = [
+  "paper",
+  "model_release",
+  "architecture",
+  "business",
+  "infra",
+  "benchmark",
+  "regulation",
+  "product"
+] as const;
+
+export const trajectories = [
+  "llm_architecture",
+  "multimodal_architecture",
+  "provider_releases",
+  "commercial_forces"
+] as const;
+
+export const confidenceLevels = ["observed", "likely", "speculative"] as const;
+
+export const sourceTypes = [
+  "paper",
+  "company",
+  "news",
+  "blog",
+  "docs",
+  "github",
+  "benchmark",
+  "regulatory",
+  "analysis",
+  "other"
+] as const;
+
+export const causalRelationshipTypes = [
+  "enabled",
+  "accelerated",
+  "pressured",
+  "contradicted",
+  "validated",
+  "influenced"
+] as const;
+
+const dateStringSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
+
+export const sourceSchema = z.object({
+  title: z.string().min(1),
+  url: z.string().url(),
+  source_type: z.enum(sourceTypes)
+});
+
+export const causalLinkSchema = z
+  .object({
+    source_event_id: z.string().min(1),
+    target_event_id: z.string().min(1).optional(),
+    target_concept: z.string().min(1).optional(),
+    relationship_type: z.enum(causalRelationshipTypes),
+    explanation: z.string().min(1),
+    confidence: z.enum(confidenceLevels),
+    sources: z.array(sourceSchema).min(1)
+  })
+  .refine((link) => Boolean(link.target_event_id ?? link.target_concept), {
+    message: "Causal links must include target_event_id or target_concept",
+    path: ["target_event_id"]
+  });
+
+export const eventSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  date: dateStringSchema,
+  type: z.enum(eventTypes),
+  summary: z.string().min(1),
+  why_it_matters: z.string().min(1),
+  trajectories: z.array(z.enum(trajectories)).min(1),
+  sources: z.array(sourceSchema).min(1),
+  confidence: z.enum(confidenceLevels),
+  watchlist: z.array(z.string()),
+  providers: z.array(z.string().min(1)).optional(),
+  causal_links: z.array(causalLinkSchema).optional(),
+  related_events: z.array(z.string().min(1)).optional()
+});
+
+export const weeklyBriefSchema = z.object({
+  week_start: dateStringSchema,
+  week_end: dateStringSchema,
+  thesis: z.string().min(1),
+  headline_event_ids: z.array(z.string().min(1)),
+  watchlist_event_ids: z.array(z.string().min(1)),
+  closing_synthesis: z.string().min(1)
+});
+
+export const extractionQualityReportSchema = z
+  .object({
+    source_url: z.string().url(),
+    extractor: z.string().min(1),
+    status: z.enum(["success", "partial", "failure"]),
+    failure: z.string().min(1).optional(),
+    quality: z.enum(["high", "needs_review", "low"]).optional(),
+    source_count: z.number().int().nonnegative(),
+    missing_fields: z.array(z.string()),
+    errors: z.array(z.string()),
+    reviewable: z.boolean()
+  })
+  .refine((report) => report.status !== "failure" || Boolean(report.failure), {
+    message: "Failure reports must include failure",
+    path: ["failure"]
+  });
+
+export const draftStateSchema = z.object({
+  state: z.enum(["generated", "invalid", "rejected", "approved"]),
+  validation_errors: z.array(z.string()).default([]),
+  rejection_reason: z.string().min(1).optional(),
+  approved_at: z.string().datetime().optional(),
+  quality_report: extractionQualityReportSchema.optional()
+});
+
+export type EventType = (typeof eventTypes)[number];
+export type Trajectory = (typeof trajectories)[number];
+export type Confidence = (typeof confidenceLevels)[number];
+export type SourceType = (typeof sourceTypes)[number];
+export type CausalRelationshipType = (typeof causalRelationshipTypes)[number];
+export type Source = z.infer<typeof sourceSchema>;
+export type CausalLink = z.infer<typeof causalLinkSchema>;
+export type Event = z.infer<typeof eventSchema>;
+export type WeeklyBrief = z.infer<typeof weeklyBriefSchema>;
+export type ExtractionQualityReport = z.infer<typeof extractionQualityReportSchema>;
+export type DraftState = z.infer<typeof draftStateSchema>;
