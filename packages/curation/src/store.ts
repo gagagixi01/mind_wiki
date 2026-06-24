@@ -1,5 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { basename, extname, join, relative } from "node:path";
+
+import { loadApprovedEvents } from "@mind-wiki/core/content";
 
 import {
   appendRunLog,
@@ -180,6 +183,8 @@ export async function approveDraft(
   }
 
   const rootDir = options.rootDir ?? process.cwd();
+  await validateApprovedEventMdx(options.filename, options.approvedMdx);
+
   const approvedDir = join(rootDir, "content", "approved", "events");
   await mkdir(approvedDir, { recursive: true });
 
@@ -211,6 +216,23 @@ export async function approveDraft(
     filePath,
     relativePath
   };
+}
+
+async function validateApprovedEventMdx(filename: string, approvedMdx: string) {
+  const tempRoot = await mkdtemp(join(tmpdir(), "mind-wiki-approval-"));
+  try {
+    const eventDir = join(tempRoot, "content", "approved", "events");
+    await mkdir(eventDir, { recursive: true });
+    await writeFile(join(eventDir, filename), approvedMdx, "utf8");
+    await loadApprovedEvents({ rootDir: tempRoot });
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Approved MDX did not validate: ${error.message}`);
+    }
+    throw error;
+  } finally {
+    await rm(tempRoot, { force: true, recursive: true });
+  }
 }
 
 async function readDraftData(id: string, options: StoreOptions) {

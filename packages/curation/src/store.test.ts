@@ -171,6 +171,21 @@ describe("local curation store", () => {
     await expect(readdir(join(rootDir, "content", "approved", "events"))).resolves.toEqual([]);
   });
 
+  it("validates approved MDX before writing it to public content", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    await writeDraftRecord("draft-1", { title: "Ready" }, { rootDir });
+
+    await expect(
+      approveDraft("draft-1", {
+        rootDir,
+        filename: "invalid-approved-event.mdx",
+        approvedMdx: "---\nid: invalid-approved-event\n---\nMissing required fields"
+      })
+    ).rejects.toThrow(/Approved MDX did not validate/);
+
+    await expect(readdir(join(rootDir, "content", "approved", "events"))).resolves.toEqual([]);
+  });
+
   it("does not approve non-draft records", async () => {
     const rootDir = await makeWorkspaceRoot();
     await writeJsonRecord("invalid", "invalid-draft", { title: "Nope" }, { rootDir });
