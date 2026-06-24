@@ -11,6 +11,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+apps/site/out/
 
 # Environment and local curation state
 .env*
