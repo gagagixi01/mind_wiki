@@ -5,6 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./draft": "./src/draft.ts",
+    "./extractors": "./src/extractors.ts",
+    "./quality": "./src/quality.ts",
+    "./queue": "./src/queue.ts",
     "./run-log": "./src/run-log.ts",
     "./store": "./src/store.ts"
   },
