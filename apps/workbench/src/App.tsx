@@ -340,6 +340,14 @@ export function App() {
           <p className="muted">
             草稿审阅、批准、驳回和重试都只更新浏览器内存；真正写入文件的动作需要未来本地服务端接口。
           </p>
+          <Empty
+            className="compact-empty"
+            data-testid="empty-drafts"
+            description="当真实队列没有待审阅草稿时，工作台显示这个本地空状态，不从公共站点或模型 API 补数据。"
+            title="无草稿空状态示例"
+          >
+            <span>当前样例草稿仍保留在下方，用来演示审阅、批准和驳回动作。</span>
+          </Empty>
           <div className="button-row">
             <Button onClick={() => setIsReviewOpen(true)} type="button">
               审阅草稿

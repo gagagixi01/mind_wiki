@@ -12,6 +12,8 @@ test.describe("local curation workbench", () => {
     await expect(page.getByLabel("摄入备注")).toBeVisible();
 
     await expect(page.getByTestId("empty-queue")).toContainText("空队列");
+    await expect(page.getByTestId("empty-drafts")).toContainText("无草稿空状态示例");
+    await expect(page.getByTestId("empty-drafts")).toContainText("不从公共站点或模型 API 补数据");
     await expect(page.getByRole("progressbar", { name: "抽取进度" })).toHaveAttribute("aria-valuenow", "64");
     await expect(page.getByTestId("progress-extraction")).toHaveAttribute("aria-valuenow", "64");
     await expect(page.getByTestId("skeleton-loader")).toBeVisible();
@@ -26,6 +28,8 @@ test.describe("local curation workbench", () => {
 
     await expect(page.getByTestId("duplicate-warning")).toContainText("已检测到重复来源");
     await expect(page.getByTestId("invalid-output")).toContainText("schema 校验失败");
+    await expect(page.getByText("已进入周报候选池，仍只存在本地工作台")).toBeVisible();
+    await expect(page.getByText("来源无法确认，保留为本地拒绝记录")).toBeVisible();
     await expect(page.getByTestId("quality-report")).toContainText("证据覆盖率");
     await expect(page.getByTestId("quality-report")).toContainText("来源可信度");
   });
