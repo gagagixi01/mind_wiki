@@ -4,14 +4,17 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./run-log": "./src/run-log.ts",
+    "./store": "./src/store.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run src/**/*.test.ts"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
+    "@mind-wiki/core": "workspace:*",
     "zod": "^3.25.76"
   }
 }

@@ -16,7 +16,8 @@ apps/site/out/
 # Environment and local curation state
 .env*
 !.env.example
-.curation/
+.curation/*
+!.curation/.gitkeep
 
 # Playwright
 playwright-report/
