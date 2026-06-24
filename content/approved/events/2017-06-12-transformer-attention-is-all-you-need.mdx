@@ -1,0 +1,21 @@
+---
+id: "2017-06-12-transformer-attention-is-all-you-need"
+title: "Transformer 以自注意力重写序列建模"
+date: "2017-06-12"
+type: "architecture"
+summary: "《Attention Is All You Need》提出 Transformer，用自注意力替代循环和卷积，显著提升并行训练效率。"
+why_it_matters: "它把语言模型的瓶颈从逐步读序列转向可并行的注意力计算，成为后来 BERT、GPT 系列和多模态模型的共同底座。"
+trajectories:
+  - "llm_architecture"
+sources:
+  - title: "Attention Is All You Need"
+    url: "https://arxiv.org/abs/1706.03762"
+    source_type: "paper"
+confidence: "observed"
+watchlist: false
+providers:
+  - "Google"
+---
+
+这是 AI 进展叙事里的地基事件。后续模型变大、数据变多、工具链变复杂，但很多关键能力都先受益于 Transformer 的可扩展训练方式。
+

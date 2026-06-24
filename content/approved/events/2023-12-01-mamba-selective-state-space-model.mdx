@@ -1,0 +1,25 @@
+---
+id: "2023-12-01-mamba-selective-state-space-model"
+title: "Mamba 用选择性状态空间挑战注意力成本"
+date: "2023-12-01"
+type: "architecture"
+summary: "Mamba 提出选择性状态空间模型和硬件感知算法，在长序列场景中以线性复杂度替代部分注意力计算。"
+why_it_matters: "它显示 Transformer 并非终局；当上下文长度、推理成本和吞吐成为瓶颈时，架构搜索会围绕硬件效率重新活跃。"
+trajectories:
+  - "llm_architecture"
+sources:
+  - title: "Mamba: Linear-Time Sequence Modeling with Selective State Spaces"
+    url: "https://arxiv.org/abs/2312.00752"
+    source_type: "paper"
+confidence: "observed"
+watchlist: true
+providers:
+  - "Carnegie Mellon University"
+  - "Princeton University"
+related_events:
+  - "2017-06-12-transformer-attention-is-all-you-need"
+  - "2022-03-22-nvidia-h100-hopper-architecture"
+---
+
+Mamba 的看点不是立刻取代 Transformer，而是把“长上下文如何更便宜”重新变成开放问题。后续需要持续观察混合架构、硬件适配和真实应用收益。
+
