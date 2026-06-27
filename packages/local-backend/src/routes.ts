@@ -24,20 +24,44 @@ import {
   type SourcePack
 } from "@mind-wiki/core/schema";
 
+const workbenchOrigin = "http://127.0.0.1:3000";
+
 export type RouteContext = {
   rootDir: string;
   now?: () => Date;
   runner?: typeof runCodexSkill;
 };
 
-function json(data: unknown, init: ResponseInit = {}) {
-  return new Response(`${JSON.stringify(data, null, 2)}\n`, {
-    ...init,
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      ...(init.headers ?? {})
-    }
-  });
+function corsHeaders(request: Request, preflight = false): Record<string, string> {
+  if (request.headers.get("origin") !== workbenchOrigin) {
+    return {};
+  }
+
+  const headers: Record<string, string> = {
+    "access-control-allow-origin": workbenchOrigin,
+    vary: "Origin"
+  };
+
+  if (preflight) {
+    headers["access-control-allow-methods"] = "GET, POST, OPTIONS";
+    headers["access-control-allow-headers"] =
+      request.headers.get("access-control-request-headers") ?? "content-type";
+  }
+
+  return headers;
+}
+
+function createJson(request: Request) {
+  return function json(data: unknown, init: ResponseInit = {}) {
+    return new Response(`${JSON.stringify(data, null, 2)}\n`, {
+      ...init,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        ...corsHeaders(request),
+        ...(init.headers ?? {})
+      }
+    });
+  };
 }
 
 async function toggleSourcePack(
@@ -139,7 +163,8 @@ async function finalizeDiscoveryRun(
 function enumFilterError(
   url: URL,
   key: string,
-  allowedValues: readonly string[]
+  allowedValues: readonly string[],
+  json: (data: unknown, init?: ResponseInit) => Response
 ): Response | undefined {
   const value = url.searchParams.get(key);
   if (value && !allowedValues.includes(value)) {
@@ -175,6 +200,14 @@ function filterDiscoveryRecords(
 export async function handleApiRequest(request: Request, context: RouteContext): Promise<Response> {
   const url = new URL(request.url);
   const options = { rootDir: context.rootDir, now: context.now };
+  const json = createJson(request);
+
+  if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders(request, true)
+    });
+  }
 
   if (request.method === "GET" && url.pathname === "/api/pipeline/status") {
     return json(await getPipelineStatus(options));
@@ -237,10 +270,10 @@ export async function handleApiRequest(request: Request, context: RouteContext):
 
   if (request.method === "GET" && url.pathname === "/api/discovery-records") {
     const invalidFilter =
-      enumFilterError(url, "discovery_method", discoveryMethods) ??
-      enumFilterError(url, "trajectory", trajectories) ??
-      enumFilterError(url, "duplicate_status", duplicateStatuses) ??
-      enumFilterError(url, "status", pipelineStates);
+      enumFilterError(url, "discovery_method", discoveryMethods, json) ??
+      enumFilterError(url, "trajectory", trajectories, json) ??
+      enumFilterError(url, "duplicate_status", duplicateStatuses, json) ??
+      enumFilterError(url, "status", pipelineStates, json);
     if (invalidFilter) {
       return invalidFilter;
     }

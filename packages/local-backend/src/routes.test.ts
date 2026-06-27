@@ -14,6 +14,8 @@ import type { DiscoveryRecord, PipelineRun } from "@mind-wiki/core/schema";
 
 import { handleApiRequest } from "./routes";
 
+const workbenchOrigin = "http://127.0.0.1:3000";
+
 async function makeRoot() {
   const rootDir = await mkdtemp(join(tmpdir(), "mind-wiki-api-"));
   await mkdir(join(rootDir, "content", "approved", "events"), { recursive: true });
@@ -99,6 +101,42 @@ describe("local backend routes", () => {
     expect(response.status).toBe(200);
     expect(body).toContain("visibleStage");
     expect(body).not.toContain("secret-key");
+  });
+
+  it("adds CORS headers to successful browser responses", async () => {
+    const response = await handleApiRequest(
+      new Request("http://127.0.0.1:8001/api/pipeline/status", {
+        headers: { origin: workbenchOrigin }
+      }),
+      {
+        rootDir: await makeRoot(),
+        now: () => new Date("2026-06-25T00:00:00.000Z")
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("access-control-allow-origin")).toBe(workbenchOrigin);
+  });
+
+  it("handles discovery preflight requests", async () => {
+    const response = await handleApiRequest(
+      new Request("http://127.0.0.1:8001/api/pipeline/discovery/run", {
+        method: "OPTIONS",
+        headers: {
+          origin: workbenchOrigin,
+          "access-control-request-method": "POST",
+          "access-control-request-headers": "content-type"
+        }
+      }),
+      {
+        rootDir: await makeRoot()
+      }
+    );
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get("access-control-allow-origin")).toBe(workbenchOrigin);
+    expect(response.headers.get("access-control-allow-methods")).toBe("GET, POST, OPTIONS");
+    expect(response.headers.get("access-control-allow-headers")).toContain("content-type");
   });
 
   it("starts discovery through injected runner", async () => {
@@ -263,11 +301,14 @@ describe("local backend routes", () => {
     await seedDiscoveryRecords(rootDir);
 
     const response = await handleApiRequest(
-      new Request("http://127.0.0.1:8001/api/discovery-records?discovery_method=browser"),
+      new Request("http://127.0.0.1:8001/api/discovery-records?discovery_method=browser", {
+        headers: { origin: workbenchOrigin }
+      }),
       { rootDir }
     );
 
     expect(response.status).toBe(400);
+    expect(response.headers.get("access-control-allow-origin")).toBe(workbenchOrigin);
     await expect(response.json()).resolves.toEqual({
       error: "invalid_discovery_method_filter"
     });
