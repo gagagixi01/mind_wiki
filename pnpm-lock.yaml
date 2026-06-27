@@ -148,9 +148,31 @@ importers:
       '@mind-wiki/core':
         specifier: workspace:*
         version: link:../core
+      execa:
+        specifier: ^9.6.0
+        version: 9.6.1
       zod:
         specifier: ^3.25.76
         version: 3.25.76
+
+  packages/local-backend:
+    dependencies:
+      '@mind-wiki/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mind-wiki/curation':
+        specifier: workspace:*
+        version: link:../curation
+    devDependencies:
+      tsx:
+        specifier: ^4.20.3
+        version: 4.22.4
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.6(@types/node@22.20.0)(jiti@1.21.7)(tsx@4.22.4)
 
 packages:
 

@@ -65,6 +65,7 @@ const config: Config = {
           "Apple Color Emoji",
           "Segoe UI Emoji"
         ],
+        serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"]
       }
     }

@@ -62,6 +62,22 @@ Use `pnpm dev:workbench` to open the local-only curation cockpit. It displays sa
 
 The workbench currently updates React local state only. Adding a source in the UI does not fetch the URL, write files, or call OpenAI or other model/browser APIs.
 
+## Discovery Smoke Test
+
+For a repeatable local discovery smoke test:
+
+```bash
+pnpm clean:appledouble
+ls .curation/source-packs
+MIND_WIKI_ROOT_DIR=/Volumes/X320/code/study/mind_wiki pnpm dev:backend
+curl -X POST http://127.0.0.1:8001/api/pipeline/discovery/run
+ls .curation/discovery-records | head
+```
+
+Use `ls .curation/source-packs` or `find .curation/source-packs -type f` to inspect seeded source packs. Running `.curation/source-packs` as a shell command will fail because it is a directory, not an executable.
+
+On macOS, `._*` AppleDouble sidecar files may appear under `.curation/source-packs`, `.curation/discovery-records`, and `.curation/agent-outputs`. Run `pnpm clean:appledouble` before repeating the smoke test if those files make inspection noisy.
+
 ## Approval Workflow
 
 1. Intake sources into local curation state.

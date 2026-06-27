@@ -11,6 +11,11 @@ const localOnlyPrefixes = [
   "rejected/",
   "quality-reports/",
   "run-logs/",
+  "source-packs/",
+  "discovery-records/",
+  "pipeline-runs/",
+  "agent-outputs/",
+  "skill-reviews/",
   "logs/"
 ] as const;
 
@@ -25,6 +30,11 @@ const localOnlyNames = [
   "rejected",
   "quality-reports",
   "run-logs",
+  "source-packs",
+  "discovery-records",
+  "pipeline-runs",
+  "agent-outputs",
+  "skill-reviews",
   "logs"
 ] as const;
 
@@ -42,3 +52,6 @@ export * from "./extractors";
 export * from "./draft";
 export * from "./quality";
 export * from "./queue";
+export * from "./pipeline";
+export * from "./skill-governance";
+export * from "./codex-runner";

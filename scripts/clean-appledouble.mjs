@@ -4,13 +4,13 @@ import { pathToFileURL } from "node:url";
 
 const APPLEDOUBLE_PREFIX = "._";
 
-async function walkForAppleDoubleFiles(root, results) {
+async function walkForAppleDoubleFiles(root, results, skipGitRoot) {
   const entries = await readdir(root, { withFileTypes: true });
 
   for (const entry of entries) {
     const absolutePath = join(root, entry.name);
 
-    if (entry.name === ".git" && entry.isDirectory()) {
+    if (absolutePath === skipGitRoot && entry.isDirectory()) {
       continue;
     }
 
@@ -20,14 +20,15 @@ async function walkForAppleDoubleFiles(root, results) {
     }
 
     if (entry.isDirectory()) {
-      await walkForAppleDoubleFiles(absolutePath, results);
+      await walkForAppleDoubleFiles(absolutePath, results, skipGitRoot);
     }
   }
 }
 
 export async function findAppleDoubleFiles(root = process.cwd()) {
   const results = [];
-  await walkForAppleDoubleFiles(resolve(root), results);
+  const absoluteRoot = resolve(root);
+  await walkForAppleDoubleFiles(absoluteRoot, results, join(absoluteRoot, ".git"));
   return results.sort();
 }
 

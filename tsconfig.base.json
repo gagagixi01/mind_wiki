@@ -4,6 +4,13 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@mind-wiki/core": ["packages/core/src/index.ts"],
+      "@mind-wiki/core/*": ["packages/core/src/*"],
+      "@mind-wiki/curation": ["packages/curation/src/index.ts"],
+      "@mind-wiki/curation/*": ["packages/curation/src/*"]
+    },
     "resolveJsonModule": true,
     "isolatedModules": true,
     "strict": true,

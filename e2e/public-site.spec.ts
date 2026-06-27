@@ -23,12 +23,22 @@ test.describe("static public AI progress site", () => {
     await page.goto("/");
 
     await expect(page.getByText("最新周报 · 2026-06-23")).toBeVisible();
+    await expect(page.getByText("Weekly Thesis · 本周研判主线")).toBeVisible();
+    await expect(page.getByText("Closing Synthesis · 结语前瞻")).toBeVisible();
+    await expect(page.getByRole("region", { name: "最新周报" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "主线聚焦" })).toBeVisible();
+    await expect(page.getByText("Main Focus · 主线聚焦")).toBeVisible();
+    await expect(page.getByText("Emerging Watchlist · 长线趋势技术看点")).toBeVisible();
     await expect(
       page.getByRole("heading", {
         name: "本周 AI 发生了什么，它在长期趋势中意味着什么？"
       })
     ).toBeVisible();
-    await expect(page.getByText("本周的主线是“能力如何变成系统”")).toBeVisible();
+    await expect(page.getByText("本周的主线是“能力如何变成可运营的系统”")).toBeVisible();
+    await expect(page.getByRole("region", { name: "10 分钟读法" })).toHaveCount(0);
+    await expect(page.getByText("读法 1")).toHaveCount(0);
+    await expect(page.getByText("筛选本周事件")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /查看事件：代理系统正在重塑工作方式/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "打开周报详情" })).toHaveAttribute(
       "href",
       "/weeks/2026-06-23"
@@ -43,11 +53,19 @@ test.describe("static public AI progress site", () => {
         name: "本周 AI 发生了什么，它在长期趋势中意味着什么？"
       })
     ).toBeVisible();
-    await expect(page.getByText("问题")).toBeVisible();
-    await expect(page.getByRole("link", { name: "本周发生了什么" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "本周发生了什么" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByText("问题", { exact: true })).toBeVisible();
+    await expect(page.getByText("AI Progress")).toBeVisible();
+    await expect(page.getByText("Weekly Digest / V1")).toBeVisible();
+    await expect(page.getByText("帮助个人创业者在 10 分钟内理解 AI 的长期技术与商业趋势。")).toBeVisible();
+    await expect(page.getByText("轨迹", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "本周" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "长期趋势" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "因果链" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "提供方" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "来源" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "本周" })).toHaveAttribute("aria-current", "page");
 
-    await page.getByRole("link", { name: "因果链如何连接" }).click();
+    await page.getByRole("link", { name: "因果链" }).click();
     await expect(page).toHaveURL(/\/causal-chains$/);
     await expect(page.getByRole("heading", { name: "因果链" })).toBeVisible();
   });
@@ -56,15 +74,17 @@ test.describe("static public AI progress site", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
 
-    await expect(page.getByRole("link", { name: "因果链如何连接" })).toBeHidden();
+    await expect(page.getByRole("link", { name: "因果链" })).toBeHidden();
     await page.getByRole("button", { name: "Toggle Sidebar" }).click();
 
     const dialog = page.getByRole("dialog", { name: "研究导航" });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText("问题")).toBeVisible();
-    await expect(dialog.getByText("轨迹")).toBeVisible();
-    await expect(dialog.getByText("视图")).toBeVisible();
-    await expect(dialog.getByRole("link", { name: "因果链如何连接" })).toBeVisible();
+    await expect(dialog.getByText("轨迹", { exact: true })).toHaveCount(0);
+    await expect(dialog.getByRole("link", { name: "长期趋势" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "因果链" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "提供方" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "来源" })).toBeVisible();
 
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
     const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
@@ -74,17 +94,26 @@ test.describe("static public AI progress site", () => {
   test("trajectory filters combine across trajectory, provider, type, confidence, and watchlist", async ({ page }) => {
     await page.goto("/trajectories");
 
-    await page.getByRole("button", { name: "商业与基础设施" }).click();
+    await expect(page.getByRole("region", { name: "选择长期轨迹" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "聚焦这条轨迹" })).toHaveCount(0);
+    await expect(page.locator('[aria-label="轨迹读法列表"]')).toBeVisible();
+    await expect(page.getByText("Track Reading · 轨迹读法")).toHaveCount(4);
+    await expect(page.getByRole("heading", { name: "LLM 架构演进" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "多模态架构" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "供应商发布与开放策略" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "商业力量与基础设施约束" })).toBeVisible();
+    await expect(page.getByText("筛选轨迹事件")).toBeVisible();
+    await page.getByRole("radio", { name: "商业与基础设施" }).click();
     await chooseSelect(page, "按提供方筛选", "NVIDIA");
     await chooseSelect(page, "按事件类型筛选", "商业");
     await chooseSelect(page, "按信心筛选", "已观察");
     await page.getByLabel("只看观察清单").click();
 
     await expect(
-      page.getByRole("button", { name: /查看事件：NVIDIA 财报显示生成式 AI 需求转化为数据中心收入/ })
+      page.getByRole("button", { name: /NVIDIA 财报显示生成式 AI 需求转化为数据中心收入/ })
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /查看事件：NVIDIA H100\/Hopper 面向 Transformer 训练和推理/ })
+      page.getByRole("button", { name: /NVIDIA H100\/Hopper 面向 Transformer 训练和推理/ })
     ).toBeHidden();
     await expect(page.getByText("商业与基础设施", { exact: true }).last()).toBeVisible();
     await expect(page.getByText("NVIDIA", { exact: true }).last()).toBeVisible();
@@ -98,14 +127,14 @@ test.describe("static public AI progress site", () => {
     await expect(page.getByText("没有缺失来源")).toBeVisible();
     await expect(page.getByText("当前批准事件都至少带有一个公开来源")).toBeVisible();
 
-    await page.goto("/");
+    await page.goto("/weeks/2026-06-23");
     await chooseSelect(page, "按提供方筛选", "Stability AI");
 
     await expect(page.getByText("没有匹配筛选的事件")).toBeVisible();
     await expect(page.getByText("换一个轨迹、提供方、事件类型或信心条件，再回到证据列表。")).toBeVisible();
 
     await page.goto("/trajectories");
-    await page.getByRole("button", { name: "LLM 架构" }).click();
+    await page.getByRole("radio", { name: "LLM 架构" }).click();
     await chooseSelect(page, "按提供方筛选", "Stability AI");
 
     await expect(page.getByText("这条轨迹暂时很稀疏")).toBeVisible();
@@ -115,18 +144,18 @@ test.describe("static public AI progress site", () => {
   test("event sheet opens from a card and closes with Escape while preserving context", async ({ page }) => {
     await page.goto("/");
 
-    await page
-      .getByRole("button", { name: /查看事件：GPT-4 发布并展示大规模多模态模型路线/ })
-      .click();
+    await page.getByRole("button", { name: /查看事件：代理系统正在重塑工作方式/ }).click();
 
     await expect(
-      page.getByRole("dialog", { name: "GPT-4 发布并展示大规模多模态模型路线" })
+      page.getByRole("dialog", { name: "代理系统正在重塑工作方式" })
     ).toBeVisible();
+    await expect(page.getByText("Why It Matters · 为什么关键")).toBeVisible();
+    await expect(page.getByText("Primary Evidence · 公开来源")).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
 
     await page.keyboard.press("Escape");
     await expect(
-      page.getByRole("dialog", { name: "GPT-4 发布并展示大规模多模态模型路线" })
+      page.getByRole("dialog", { name: "代理系统正在重塑工作方式" })
     ).toBeHidden();
     await expect(page.getByRole("heading", { name: /本周 AI 发生了什么/ })).toBeVisible();
   });
@@ -135,15 +164,20 @@ test.describe("static public AI progress site", () => {
     await page.goto("/");
 
     await expect(page.getByText("信心：已观察", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("来源 2", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/^来源 [1-9]\d*$/).first()).toBeVisible();
   });
 
   test("causal-chain view renders confidence labels and source counts", async ({ page }) => {
     await page.goto("/causal-chains");
 
     await expect(page.getByRole("heading", { name: "因果链" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "商业到技术阅读路径" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "需求、资本和供应链先动" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "成本、吞吐和可靠性被重新排序" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "模型路线被基础设施反推" })).toBeVisible();
     await expect(page.getByText("来源事件").first()).toBeVisible();
     await expect(page.getByText("目标").first()).toBeVisible();
+    await expect(page.getByText(/^判断：/).first()).toBeVisible();
     await expect(page.getByText("信心：可能").first()).toBeVisible();
     await expect(page.getByText("来源 2", { exact: true }).first()).toBeVisible();
   });
@@ -161,23 +195,33 @@ test.describe("static public AI progress site", () => {
 
     await expect(page.getByRole("heading", { name: "周报详情" })).toBeVisible();
     await expect(
-      page.getByText("这是一篇种子历史综合周报，用 2026-06-23 这一周作为站点初始化入口")
+      page.getByText("这是一篇刷新后的周报，用 2026-06-23 这一周作为站点入口")
     ).toBeVisible();
-    await expect(page.getByText("本周的主线是“能力如何变成系统”")).toBeVisible();
+    await expect(page.getByText("本周的主线是“能力如何变成可运营的系统”")).toBeVisible();
   });
 
   test("trajectory detail clear filters keeps the route trajectory scope", async ({ page }) => {
     await page.goto("/trajectories/multimodal_architecture");
 
-    await expect(page.getByRole("heading", { name: "多模态" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /查看事件：CLIP 将文本和图像放进同一个语义空间/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /查看事件：Mamba 用选择性状态空间挑战注意力成本/ })).toBeHidden();
+    await expect(page.locator("h1").filter({ hasText: "多模态" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "当前轨迹" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "全部轨迹" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "多模态" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByText("筛选当前轨迹事件")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "全部轨迹" })).toHaveCount(0);
+    await expect(page.getByText("图文对齐 → 扩散生成 → 多模态产品化")).toBeVisible();
+    await expect(page.getByText("关键历史锚点")).toBeVisible();
+    await expect(page.getByText("本周相关性")).toBeVisible();
+    await expect(page.getByText("下一步观察")).toBeVisible();
+    await expect(page.getByRole("region", { name: "轨迹时间线" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /CLIP 将文本和图像放进同一个语义空间/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Mamba 用选择性状态空间挑战注意力成本/ })).toBeHidden();
 
     await page.getByRole("button", { name: "清除筛选" }).click();
 
-    await expect(page.getByRole("button", { name: "多模态" })).toHaveAttribute("data-state", "on");
-    await expect(page.getByRole("button", { name: /查看事件：CLIP 将文本和图像放进同一个语义空间/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /查看事件：Mamba 用选择性状态空间挑战注意力成本/ })).toBeHidden();
+    await expect(page.getByRole("link", { name: "多模态" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("button", { name: /CLIP 将文本和图像放进同一个语义空间/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Mamba 用选择性状态空间挑战注意力成本/ })).toBeHidden();
   });
 
   test("static export excludes local files, workbench strings, and secret markers", async () => {

@@ -7,7 +7,8 @@
   "scripts": {
     "dev:site": "pnpm --filter @mind-wiki/site dev",
     "dev:workbench": "pnpm --filter @mind-wiki/workbench dev",
-    "build": "pnpm --filter @mind-wiki/core build && pnpm --filter @mind-wiki/curation build && pnpm --filter @mind-wiki/site build && pnpm --filter @mind-wiki/workbench build && pnpm clean:appledouble",
+    "dev:backend": "pnpm --filter @mind-wiki/local-backend dev",
+    "build": "pnpm --filter @mind-wiki/core build && pnpm --filter @mind-wiki/curation build && pnpm --filter @mind-wiki/local-backend build && pnpm --filter @mind-wiki/site build && pnpm --filter @mind-wiki/workbench build && pnpm clean:appledouble",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "lint": "pnpm -r lint",

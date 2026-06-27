@@ -1,6 +1,163 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("local curation workbench", () => {
+  test("shows pipeline status bar and discovery action in the first viewport", async ({ page }) => {
+    await page.route("**/api/pipeline/status", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          stale: false,
+          visibleStage: "idle",
+          counts: { candidates: 0, drafts: 0, failures: 0, readyForReview: 0, sourcePacks: 0 }
+        })
+      });
+    });
+    await page.route("**/api/discovery-records", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify([])
+      });
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByRole("button", { name: "Run discovery" })).toBeVisible();
+    await expect(page.getByText("待运行")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "本地发现流程" })).toBeVisible();
+  });
+
+  test("disables duplicate discovery while an active run is present", async ({ page }) => {
+    await page.route("**/api/pipeline/status", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          activeRun: { id: "run-1", stage: "discovering", started_at: "2026-06-25T00:00:00.000Z" },
+          stale: false,
+          visibleStage: "discovering",
+          counts: { candidates: 3, drafts: 0, failures: 0, readyForReview: 0, sourcePacks: 2 }
+        })
+      });
+    });
+    await page.route("**/api/discovery-records", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify([])
+      });
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByRole("button", { name: "运行中" })).toBeDisabled();
+    await expect(page.getByText("正在通过 RSS 和 web search 查找候选来源。")).toBeVisible();
+  });
+
+  test("shows discovered candidates from the discovery records api", async ({ page }) => {
+    await page.route("**/api/pipeline/status", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          stale: false,
+          visibleStage: "discovered",
+          counts: { candidates: 1, drafts: 0, failures: 0, readyForReview: 0, sourcePacks: 3 }
+        })
+      });
+    });
+    await page.route("**/api/discovery-records", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "run-1-provider-openai-chip",
+            data: {
+              id: "run-1-provider-openai-chip",
+              run_id: "run-1",
+              source_pack_id: "provider-blogs",
+              discovered_url: "https://openai.com/news/chip",
+              normalized_url: "https://openai.com/news/chip",
+              canonical_url: "https://openai.com/news/chip",
+              title: "OpenAI and Broadcom unveil inference chip",
+              discovery_method: "rss",
+              reason_found: "Matched provider RSS feed.",
+              source_type: "provider_blog",
+              trajectory_classification: ["provider_releases"],
+              duplicate_status: "new",
+              confidence: "observed",
+              status: "discovered",
+              errors: [],
+              created_at: "2026-06-25T09:14:21.885Z",
+              updated_at: "2026-06-25T09:14:21.885Z"
+            }
+          }
+        ])
+      });
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByTestId("discovery-record-run-1-provider-openai-chip")).toContainText(
+      "OpenAI and Broadcom unveil inference chip"
+    );
+    await expect(page.getByTestId("discovery-record-run-1-provider-openai-chip")).toContainText("provider-blogs");
+    await expect(page.getByTestId("discovery-record-run-1-provider-openai-chip")).toContainText("RSS");
+    await expect(page.getByTestId("discovery-record-run-1-provider-openai-chip")).toContainText(
+      "https://openai.com/news/chip"
+    );
+  });
+
+  test("shows failed discovery records with visible failure context", async ({ page }) => {
+    await page.route("**/api/pipeline/status", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          stale: false,
+          visibleStage: "discovered",
+          counts: { candidates: 1, drafts: 0, failures: 1, readyForReview: 0, sourcePacks: 3 }
+        })
+      });
+    });
+    await page.route("**/api/discovery-records", async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify([
+          {
+            id: "run-1-provider-web-search-unavailable",
+            data: {
+              id: "run-1-provider-web-search-unavailable",
+              run_id: "run-1",
+              source_pack_id: "provider-blogs",
+              discovered_url: "https://search.local/unavailable",
+              normalized_url: "https://search.local/unavailable",
+              canonical_url: "https://search.local/unavailable",
+              title: "web-search-unavailable",
+              discovery_method: "web_search",
+              reason_found: "Configured web search query failed.",
+              source_type: "provider_blog",
+              trajectory_classification: ["provider_releases"],
+              duplicate_status: "ignored",
+              confidence: "likely",
+              status: "failed",
+              errors: ["search_provider_unavailable"],
+              created_at: "2026-06-25T09:14:21.885Z",
+              updated_at: "2026-06-25T09:14:21.885Z"
+            }
+          }
+        ])
+      });
+    });
+
+    await page.goto("/");
+
+    await expect(page.getByTestId("discovery-record-run-1-provider-web-search-unavailable")).toContainText(
+      "web-search-unavailable"
+    );
+    await expect(page.getByTestId("discovery-record-run-1-provider-web-search-unavailable")).toContainText(
+      "search_provider_unavailable"
+    );
+    await expect(page.getByTestId("discovery-record-run-1-provider-web-search-unavailable")).toContainText(
+      "Web search"
+    );
+  });
+
   test("renders required local-only curation states and quality report", async ({ page }) => {
     await page.goto("/");
 
@@ -110,6 +267,8 @@ test.describe("local curation workbench", () => {
     await expect(page.getByRole("status")).toContainText("已批准草稿：OpenAI 发布本地推理优化");
     await expect(page.getByTestId("draft-status")).toContainText("已批准草稿");
 
+    await page.getByRole("button", { name: "审阅草稿" }).click();
+    await expect(page.getByRole("dialog", { name: "草稿审阅" })).toBeVisible();
     await page.getByRole("button", { name: "驳回草稿" }).click();
     await expect(page.getByRole("status")).toContainText("已驳回草稿：OpenAI 发布本地推理优化");
     await expect(page.getByTestId("draft-status")).toContainText("已拒绝草稿");

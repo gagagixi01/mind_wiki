@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { APP_NAME } from "@mind-wiki/core";
 import {
   Badge,
@@ -28,6 +28,48 @@ type QueueItem = {
 
 type DraftStatus = "待审阅草稿" | "已批准草稿" | "已拒绝草稿";
 
+type PipelineStatus = {
+  activeRun?: { id: string; stage: string; started_at: string };
+  latestCompletedRun?: {
+    id: string;
+    stage: string;
+    ended_at?: string;
+    error?: { message_zh: string; suggested_next_action: string; source_pack_id?: string };
+  };
+  stale: boolean;
+  visibleStage: string;
+  counts: {
+    candidates: number;
+    drafts: number;
+    failures: number;
+    readyForReview: number;
+    sourcePacks: number;
+  };
+};
+
+type DiscoveryRecord = {
+  id: string;
+  data: {
+    id: string;
+    run_id: string;
+    source_pack_id: string;
+    discovered_url: string;
+    normalized_url: string;
+    canonical_url?: string;
+    title: string;
+    discovery_method: "rss" | "web_search";
+    reason_found: string;
+    source_type: string;
+    trajectory_classification: string[];
+    duplicate_status: string;
+    confidence: "observed" | "likely" | "speculative";
+    status: string;
+    errors: string[];
+    created_at: string;
+    updated_at: string;
+  };
+};
+
 const sourceTypeLabels: Record<string, string> = {
   paper: "论文",
   release: "发布说明",
@@ -52,7 +94,7 @@ const queueItems: QueueItem[] = [
     stage: "fallback",
     status: "备用抽取器",
     owner: "readability-fallback",
-    detail: "主抽取器缺少正文，已切换到本地备用抽取器",
+    detail: "主抽取器缺少正文，已切换到本地备用流程",
     tone: "warning"
   },
   {
@@ -108,6 +150,50 @@ const approvedEvents = [
   "企业采购团队要求可追溯的 AI 证据包"
 ];
 
+const stateLabels: Record<
+  string,
+  { label: string; tone: "neutral" | "success" | "warning" | "danger" | "info"; copy: string }
+> = {
+  idle: { label: "待运行", tone: "neutral", copy: "还没有运行本周发现流程。" },
+  discovering: { label: "正在发现", tone: "info", copy: "正在通过 RSS 和 web search 查找候选来源。" },
+  discovered: { label: "已发现候选", tone: "info", copy: "查看候选来源、重复状态和轨迹分类。" },
+  extracting: { label: "正在抽取", tone: "info", copy: "Crawl4AI / Trafilatura 正在抽取内容。" },
+  extracted: { label: "已抽取", tone: "success", copy: "可以进入质量检查和草稿生成。" },
+  "low-quality": { label: "质量偏低", tone: "warning", copy: "抽取内容不足以生成可靠事件。" },
+  drafting: { label: "正在起草", tone: "info", copy: "正在生成中文结构化草稿。" },
+  "draft-invalid": { label: "草稿无效", tone: "warning", copy: "AI 输出未通过 schema 或中文质量校验。" },
+  "ready-for-review": { label: "待人工审核", tone: "info", copy: "需要人工判断是否进入公开内容。" },
+  approved: { label: "已批准", tone: "success", copy: "已可进入 content/approved。" },
+  rejected: { label: "已拒绝", tone: "neutral", copy: "已保留拒绝原因和来源记录。" },
+  failed: { label: "运行失败", tone: "danger", copy: "查看失败类型、source pack 和下一步建议。" }
+};
+
+const discoveryMethodLabels: Record<DiscoveryRecord["data"]["discovery_method"], string> = {
+  rss: "RSS",
+  web_search: "Web search"
+};
+
+const discoveryConfidenceLabels: Record<DiscoveryRecord["data"]["confidence"], string> = {
+  observed: "已观察",
+  likely: "可能",
+  speculative: "推测"
+};
+
+const discoveryTrajectoryLabels: Record<string, string> = {
+  llm_architecture: "LLM 架构",
+  multimodal_architecture: "多模态",
+  provider_releases: "供应商策略",
+  commercial_forces: "商业与基础设施"
+};
+
+async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, init);
+  if (!response.ok) {
+    throw new Error(await response.text());
+  }
+  return response.json() as Promise<T>;
+}
+
 export function App() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>("待审阅草稿");
@@ -122,15 +208,71 @@ export function App() {
   const [sourceType, setSourceType] = useState("release");
   const [sourceNotes, setSourceNotes] = useState("");
   const [localSources, setLocalSources] = useState<QueueItem[]>([]);
+  const [status, setStatus] = useState<PipelineStatus | null>(null);
+  const [discoveryRecords, setDiscoveryRecords] = useState<DiscoveryRecord[] | null>(null);
+  const [isRunningDiscovery, setIsRunningDiscovery] = useState(false);
+
+  async function refreshWorkbenchData() {
+    try {
+      setStatus(await fetchJson<PipelineStatus>("/api/pipeline/status"));
+    } catch (error) {
+      setStatus({
+        stale: false,
+        visibleStage: "idle",
+        counts: {
+          candidates: queueItems.length,
+          drafts: 1,
+          failures: 1,
+          readyForReview: 1,
+          sourcePacks: 0
+        },
+        latestCompletedRun: {
+          id: "sample-run",
+          stage: "idle"
+        }
+      });
+      setDiscoveryRecords(null);
+      setToastMessage(
+        error instanceof Error ? "本地后端不可用，当前显示样例状态。" : "本地后端不可用，当前显示样例状态。"
+      );
+      return;
+    }
+
+    try {
+      setDiscoveryRecords(await fetchJson<DiscoveryRecord[]>("/api/discovery-records"));
+    } catch {
+      setDiscoveryRecords([]);
+    }
+  }
+
+  async function runDiscovery() {
+    setIsRunningDiscovery(true);
+    setToastMessage("正在启动本地 Codex CLI 发现流程。");
+    try {
+      await fetchJson("/api/pipeline/discovery/run", { method: "POST" });
+      await refreshWorkbenchData();
+      setToastMessage("发现流程已启动。");
+    } catch (error) {
+      setToastMessage(error instanceof Error ? error.message : "发现流程启动失败。");
+    } finally {
+      setIsRunningDiscovery(false);
+    }
+  }
+
+  useEffect(() => {
+    void refreshWorkbenchData();
+  }, []);
 
   function approveDraft() {
     setDraftStatus("已批准草稿");
     setToastMessage("已批准草稿：OpenAI 发布本地推理优化");
+    setIsReviewOpen(false);
   }
 
   function rejectDraft() {
     setDraftStatus("已拒绝草稿");
     setToastMessage("已驳回草稿：OpenAI 发布本地推理优化");
+    setIsReviewOpen(false);
   }
 
   function retryExtraction() {
@@ -169,8 +311,42 @@ export function App() {
     setSourceType("release");
   }
 
+  const currentState = (stateLabels[status?.visibleStage ?? "idle"] ?? stateLabels.idle)!;
+  const candidateCount = status?.counts.candidates ?? discoveryRecords?.length ?? queueItems.length;
+
   return (
     <main className="workbench-shell">
+      <section className="status-bar" aria-label="Pipeline status">
+        <div>
+          <p className="eyebrow">Pipeline</p>
+          <h1>本地发现流程</h1>
+          <p>{currentState.copy}</p>
+        </div>
+        <Badge tone={currentState.tone}>
+          {currentState.label}
+        </Badge>
+        <Button
+          disabled={Boolean(status?.activeRun) || isRunningDiscovery}
+          onClick={runDiscovery}
+          type="button"
+        >
+          {status?.activeRun || isRunningDiscovery ? "运行中" : "Run discovery"}
+        </Button>
+      </section>
+
+      {status?.latestCompletedRun?.error ? (
+        <section className="failure-panel" aria-label="Pipeline failure">
+          <strong>{status.latestCompletedRun.error.message_zh}</strong>
+          {status.latestCompletedRun.error.source_pack_id ? (
+            <span>Source pack: {status.latestCompletedRun.error.source_pack_id}</span>
+          ) : null}
+          <span>{status.latestCompletedRun.error.suggested_next_action}</span>
+          <Button onClick={runDiscovery} type="button" variant="outline">
+            重试失败步骤
+          </Button>
+        </section>
+      ) : null}
+
       <header className="hero-band">
         <div>
           <p className="eyebrow">本地工作台 · 不进入静态发布</p>
@@ -187,6 +363,85 @@ export function App() {
       </header>
 
       <StatusToast message={toastMessage} />
+
+      <section className="ops-grid" aria-label="Local pipeline overview">
+        <Card>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Source packs</p>
+              <h2>来源包健康</h2>
+            </div>
+            <Badge tone={status?.counts.sourcePacks ? "info" : "neutral"}>
+              {status?.counts.sourcePacks ?? 0} packs
+            </Badge>
+          </div>
+          <p className="muted">
+            显示启用状态、最近成功、最近失败、候选数量、重复数量和下一步动作。
+          </p>
+        </Card>
+
+        <Card>
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Discovery candidates</p>
+              <h2>候选队列</h2>
+            </div>
+            <Badge tone="info">{candidateCount} candidates</Badge>
+          </div>
+          {discoveryRecords === null ? (
+            <div className="candidate-grid">
+              {[...localSources, ...queueItems].slice(0, 5).map((item) => (
+                <article className="candidate-row" key={item.id}>
+                  <strong>{item.source}</strong>
+                  <span>{item.stage}</span>
+                  <Badge tone={item.tone}>{item.status}</Badge>
+                  <span>{item.owner}</span>
+                  <span>{item.detail}</span>
+                </article>
+              ))}
+            </div>
+          ) : discoveryRecords.length === 0 ? (
+            <Empty
+              className="compact-empty"
+              description="本地后端已连接，但当前还没有 discovery records。运行发现流程后在这里查看真实候选。"
+              title="暂无候选"
+            >
+              <span>候选队列读取 `.curation/discovery-records`，不会从公共站点补数据。</span>
+            </Empty>
+          ) : (
+            <div className="candidate-grid">
+              {discoveryRecords.slice(0, 5).map((record) => {
+                const item = record.data;
+                const discoveryTone: QueueTone = item.status === "failed" ? "warning" : "info";
+                const discoveryStatus = item.status === "failed" ? "发现失败" : "已发现候选";
+                const trajectorySummary = item.trajectory_classification
+                  .map((trajectory) => discoveryTrajectoryLabels[trajectory] ?? trajectory)
+                  .join(" / ");
+                const detail =
+                  item.status === "failed" && item.errors.length > 0
+                    ? item.errors.join(" · ")
+                    : item.normalized_url;
+
+                return (
+                  <article
+                    className="candidate-row"
+                    data-testid={`discovery-record-${record.id}`}
+                    key={record.id}
+                  >
+                    <strong>{item.title}</strong>
+                    <span>{discoveryMethodLabels[item.discovery_method]}</span>
+                    <Badge tone={discoveryTone}>{discoveryStatus}</Badge>
+                    <span>{item.source_pack_id}</span>
+                    <span>{detail}</span>
+                    <span>{trajectorySummary}</span>
+                    <span>{discoveryConfidenceLabels[item.confidence]}</span>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+      </section>
 
       <section className="dashboard-grid" aria-label="Local curation operations">
         <Card className="span-2">

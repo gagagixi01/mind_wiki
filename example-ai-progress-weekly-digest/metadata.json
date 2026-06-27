@@ -1,0 +1,6 @@
+{
+  "name": "AI Progress Weekly Digest",
+  "description": "一个中文优先的 AI 进展研究与策展平台，帮助个人创业者快速理清本周 AI 进展及其在长期技术与商业趋势中的因果联系。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

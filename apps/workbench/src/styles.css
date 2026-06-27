@@ -27,6 +27,40 @@ textarea {
   padding: 24px;
 }
 
+.status-bar {
+  align-items: center;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin: 0 auto 16px;
+  max-width: 1440px;
+  padding: 16px;
+}
+
+.status-bar h1,
+.status-bar p {
+  margin: 0;
+}
+
+.status-bar h1 {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.failure-panel {
+  background: hsl(var(--destructive) / 0.08);
+  border: 1px solid hsl(var(--destructive) / 0.35);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 8px;
+  margin: 0 auto 16px;
+  max-width: 1440px;
+  padding: 14px;
+}
+
 .hero-band {
   align-items: end;
   border-bottom: 1px solid hsl(var(--border));
@@ -85,6 +119,14 @@ textarea {
   gap: 16px;
   grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.75fr);
   margin: 0 auto;
+  max-width: 1440px;
+}
+
+.ops-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+  margin: 0 auto 16px;
   max-width: 1440px;
 }
 
@@ -239,6 +281,20 @@ textarea {
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius);
   overflow-x: auto;
+}
+
+.candidate-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.candidate-row {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(220px, 1.4fr) repeat(4, minmax(100px, 1fr));
+  padding: 12px;
 }
 
 table {
@@ -546,6 +602,7 @@ label {
 
 @media (max-width: 1080px) {
   .hero-band,
+  .ops-grid,
   .dashboard-grid,
   .queue-summary,
   .form-grid {
@@ -566,6 +623,15 @@ label {
 @media (max-width: 640px) {
   .workbench-shell {
     padding: 16px;
+  }
+
+  .status-bar,
+  .candidate-row {
+    grid-template-columns: 1fr;
+  }
+
+  .table-wrap {
+    overflow-x: hidden;
   }
 
   .section-heading,

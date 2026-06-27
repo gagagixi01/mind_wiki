@@ -1,8 +1,18 @@
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, extname, join, relative } from "node:path";
 
 import { loadApprovedEvents } from "@mind-wiki/core/content";
+import {
+  discoveryRecordSchema,
+  pipelineRunSchema,
+  skillReviewRecordSchema,
+  sourcePackSchema,
+  type DiscoveryRecord,
+  type PipelineRun,
+  type SkillReviewRecord,
+  type SourcePack
+} from "@mind-wiki/core/schema";
 
 import {
   appendRunLog,
@@ -17,7 +27,12 @@ export const curationAreaDirs = [
   "invalid",
   "rejected",
   "quality-reports",
-  "run-logs"
+  "run-logs",
+  "source-packs",
+  "discovery-records",
+  "pipeline-runs",
+  "agent-outputs",
+  "skill-reviews"
 ] as const;
 
 export type CurationArea = (typeof curationAreaDirs)[number];
@@ -109,6 +124,37 @@ export async function inspectCurationRecord<T = unknown>(
   const filePath = await recordPath(area, id, options);
   const raw = await readFile(filePath, "utf8");
   return recordResult(area, id, JSON.parse(raw) as T, filePath, options.rootDir);
+}
+
+export async function readCurationRecords<T = unknown>(
+  area: CurationArea,
+  options: StoreOptions = {}
+): Promise<CurationRecord<T>[]> {
+  const dirs = await ensureCurationDirs(options.rootDir);
+  const entries = await readdir(dirs.areas[area], { withFileTypes: true });
+  const records = await Promise.all(
+    entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".json") && !entry.name.startsWith("._"))
+      .map((entry) => inspectCurationRecord<T>(area, basename(entry.name, ".json"), options))
+  );
+
+  return records.sort((a, b) => a.id.localeCompare(b.id));
+}
+
+export function writeSourcePack(id: string, data: SourcePack, options: StoreOptions = {}) {
+  return writeJsonRecord("source-packs", id, sourcePackSchema.parse(data), options);
+}
+
+export function writeDiscoveryRecord(id: string, data: DiscoveryRecord, options: StoreOptions = {}) {
+  return writeJsonRecord("discovery-records", id, discoveryRecordSchema.parse(data), options);
+}
+
+export function writePipelineRun(id: string, data: PipelineRun, options: StoreOptions = {}) {
+  return writeJsonRecord("pipeline-runs", id, pipelineRunSchema.parse(data), options);
+}
+
+export function writeSkillReviewRecord(id: string, data: SkillReviewRecord, options: StoreOptions = {}) {
+  return writeJsonRecord("skill-reviews", id, skillReviewRecordSchema.parse(data), options);
 }
 
 export async function rejectDraft(

@@ -19,4 +19,17 @@
   ::selection {
     @apply bg-accent text-accent-foreground;
   }
+
+  h1,
+  h2,
+  h3,
+  .font-serif {
+    text-wrap: balance;
+  }
+
+  button,
+  a,
+  [role="button"] {
+    @apply transition-colors;
+  }
 }

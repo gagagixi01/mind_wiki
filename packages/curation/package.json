@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@mind-wiki/core": "workspace:*",
+    "execa": "^9.6.0",
     "zod": "^3.25.76"
   }
 }

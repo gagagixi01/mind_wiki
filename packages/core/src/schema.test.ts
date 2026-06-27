@@ -2,9 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   causalLinkSchema,
+  discoveryRecordSchema,
   draftStateSchema,
   eventSchema,
   extractionQualityReportSchema,
+  failureCodes,
+  pipelineRunSchema,
+  pipelineStateUiSchema,
+  skillReviewRecordSchema,
+  sourcePackSchema,
   weeklyBriefSchema
 } from "./schema";
 
@@ -405,5 +411,98 @@ describe("content schemas", () => {
 
     expect(draft.state).toBe("invalid");
     expect(draft.quality_report?.reviewable).toBe(true);
+  });
+});
+
+describe("pipeline contracts", () => {
+  it("accepts source packs for manual discovery", () => {
+    expect(sourcePackSchema.parse({
+      id: "provider-blogs",
+      name: "Provider Blogs",
+      enabled: true,
+      rss_feeds: ["https://openai.com/news/rss.xml"],
+      web_search_queries: ["site:openai.com AI model release this week"],
+      source_type: "provider_blog",
+      trajectory_hints: ["provider_releases"],
+      cadence: "manual",
+      trusted_domains: ["openai.com"],
+      excluded_domains: ["spam.example"],
+      dedupe_strategy: "normalized_url",
+      notes: "Official provider releases.",
+      created_at: "2026-06-25T00:00:00.000Z",
+      updated_at: "2026-06-25T00:00:00.000Z"
+    }).dedupe_strategy).toBe("normalized_url");
+  });
+
+  it("accepts discovery records with visible pipeline state", () => {
+    expect(discoveryRecordSchema.parse({
+      id: "disc-1",
+      run_id: "run-1",
+      source_pack_id: "provider-blogs",
+      discovered_url: "https://openai.com/news/release",
+      normalized_url: "https://openai.com/news/release",
+      canonical_url: "https://openai.com/news/release",
+      title: "Release note",
+      discovery_method: "rss",
+      reason_found: "Matched configured RSS feed.",
+      source_type: "provider_blog",
+      trajectory_classification: ["provider_releases"],
+      duplicate_status: "new",
+      confidence: "observed",
+      status: "discovered",
+      errors: [],
+      created_at: "2026-06-25T00:00:00.000Z",
+      updated_at: "2026-06-25T00:00:00.000Z"
+    }).status).toBe("discovered");
+  });
+
+  it("accepts pipeline runs with named failures", () => {
+    expect(failureCodes).toContain("active_run_exists");
+    expect(pipelineRunSchema.parse({
+      id: "run-1",
+      type: "discovery",
+      status: "failed",
+      stage: "failed",
+      trigger: "manual_workbench",
+      skill_name: "ai-weekly-discovery",
+      started_at: "2026-06-25T00:00:00.000Z",
+      ended_at: "2026-06-25T00:01:00.000Z",
+      input_summary: "Manual discovery.",
+      output_refs: [".curation/agent-outputs/run-1/stderr.txt"],
+      error: {
+        code: "search_provider_unavailable",
+        message_zh: "本地搜索服务不可用。",
+        suggested_next_action: "启动 SearXNG 后重试。",
+        diagnostic_ref: ".curation/agent-outputs/run-1/error.json"
+      }
+    }).error?.code).toBe("search_provider_unavailable");
+  });
+
+  it("maps visible states to workbench UI copy", () => {
+    expect(pipelineStateUiSchema.parse({
+      state: "ready-for-review",
+      label_zh: "待人工审核",
+      badge_tone: "info",
+      primary_action: "approve_or_reject",
+      copy_zh: "需要人工判断是否进入公开内容。"
+    }).label_zh).toBe("待人工审核");
+  });
+
+  it("records skill reuse review evidence", () => {
+    expect(skillReviewRecordSchema.parse({
+      review_id: "review-1",
+      target_skill: "ai-weekly-discovery",
+      candidate_name: "rss-search-skill",
+      candidate_source: "github",
+      candidate_url: "https://github.com/example/rss-search-skill",
+      license: "MIT",
+      reviewed_files: ["SKILL.md"],
+      capability_match: "partial match worth adapting",
+      risk_level: "medium",
+      decision: "reuse_pattern",
+      reuse_mode: "adapt_github_skill",
+      notes: "Reuse discovery pattern only.",
+      reviewed_at: "2026-06-25T00:00:00.000Z"
+    }).target_skill).toBe("ai-weekly-discovery");
   });
 });

@@ -11,11 +11,16 @@ import {
   curationAreaDirs,
   ensureCurationDirs,
   inspectCurationRecord,
+  readCurationRecords,
   rejectDraft,
   retryDraft,
+  writeDiscoveryRecord,
   writeDraftRecord,
   writeJsonRecord,
-  writeQualityReport
+  writePipelineRun,
+  writeQualityReport,
+  writeSkillReviewRecord,
+  writeSourcePack
 } from "./store";
 
 async function makeWorkspaceRoot() {
@@ -288,5 +293,193 @@ describe("local curation store", () => {
       "validation",
       "duplicate_warning"
     ]);
+  });
+
+  it("creates backend curation directories", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    const dirs = await ensureCurationDirs(rootDir);
+
+    expect(Object.keys(dirs.areas)).toEqual(expect.arrayContaining([
+      "source-packs",
+      "discovery-records",
+      "pipeline-runs",
+      "agent-outputs",
+      "skill-reviews"
+    ]));
+  });
+
+  it("writes and reads typed backend records", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    await writeSourcePack("provider-blogs", {
+      id: "provider-blogs",
+      name: "Provider Blogs",
+      enabled: true,
+      rss_feeds: ["https://openai.com/news/rss.xml"],
+      web_search_queries: ["site:openai.com AI release"],
+      source_type: "provider_blog",
+      trajectory_hints: ["provider_releases"],
+      cadence: "manual",
+      trusted_domains: ["openai.com"],
+      excluded_domains: [],
+      dedupe_strategy: "normalized_url",
+      notes: "Official feeds.",
+      created_at: "2026-06-25T00:00:00.000Z",
+      updated_at: "2026-06-25T00:00:00.000Z"
+    }, { rootDir });
+    await writePipelineRun("run-1", {
+      id: "run-1",
+      type: "discovery",
+      status: "running",
+      stage: "discovering",
+      trigger: "manual_workbench",
+      skill_name: "ai-weekly-discovery",
+      started_at: "2026-06-25T00:00:00.000Z",
+      input_summary: "Manual discovery.",
+      output_refs: []
+    }, { rootDir });
+    await writeDiscoveryRecord("disc-1", {
+      id: "disc-1",
+      run_id: "run-1",
+      source_pack_id: "provider-blogs",
+      discovered_url: "https://openai.com/news/release",
+      normalized_url: "https://openai.com/news/release",
+      title: "Release",
+      discovery_method: "rss",
+      reason_found: "Matched RSS.",
+      source_type: "provider_blog",
+      trajectory_classification: ["provider_releases"],
+      duplicate_status: "new",
+      confidence: "observed",
+      status: "discovered",
+      errors: [],
+      created_at: "2026-06-25T00:00:00.000Z",
+      updated_at: "2026-06-25T00:00:00.000Z"
+    }, { rootDir });
+    await writeSkillReviewRecord("review-1", {
+      review_id: "review-1",
+      target_skill: "ai-weekly-discovery",
+      candidate_name: "rss-search-skill",
+      candidate_source: "github",
+      candidate_url: "https://github.com/example/rss-search-skill",
+      license: "MIT",
+      reviewed_files: ["SKILL.md"],
+      capability_match: "partial match worth adapting",
+      risk_level: "medium",
+      decision: "reuse_pattern",
+      reuse_mode: "adapt_github_skill",
+      notes: "Pattern only.",
+      reviewed_at: "2026-06-25T00:00:00.000Z"
+    }, { rootDir });
+
+    expect((await readCurationRecords("source-packs", { rootDir })).map((record) => record.id)).toEqual(["provider-blogs"]);
+    expect((await readCurationRecords("discovery-records", { rootDir })).map((record) => record.id)).toEqual(["disc-1"]);
+  });
+
+  it("makes source packs and persisted discovery records visible through the curation store", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    const timestamp = "2026-06-25T08:30:00.000Z";
+
+    await writeSourcePack(
+      "provider-blogs",
+      {
+        id: "provider-blogs",
+        name: "Provider Blogs",
+        enabled: true,
+        rss_feeds: ["https://openai.com/news/rss.xml"],
+        web_search_queries: ["site:openai.com/index GPT model release"],
+        source_type: "provider_blog",
+        trajectory_hints: ["provider_releases"],
+        cadence: "manual",
+        trusted_domains: ["openai.com"],
+        excluded_domains: [],
+        dedupe_strategy: "normalized_url",
+        notes: "Minimal smoke-test source pack.",
+        created_at: timestamp,
+        updated_at: timestamp
+      },
+      { rootDir }
+    );
+
+    await writeDiscoveryRecord(
+      "disc-provider-blog",
+      {
+        id: "disc-provider-blog",
+        run_id: "run-1",
+        source_pack_id: "provider-blogs",
+        discovered_url: "https://openai.com/index/example-release",
+        normalized_url: "https://openai.com/index/example-release",
+        canonical_url: "https://openai.com/index/example-release",
+        title: "Example release",
+        discovery_method: "rss",
+        reason_found: "Matched provider RSS feed.",
+        source_type: "provider_blog",
+        trajectory_classification: ["provider_releases"],
+        duplicate_status: "new",
+        confidence: "observed",
+        status: "discovered",
+        errors: [],
+        created_at: timestamp,
+        updated_at: timestamp
+      },
+      { rootDir }
+    );
+
+    expect((await readCurationRecords("source-packs", { rootDir })).map((record) => record.id)).toEqual(["provider-blogs"]);
+    expect((await readCurationRecords("discovery-records", { rootDir })).map((record) => record.id)).toEqual(["disc-provider-blog"]);
+  });
+
+  it("ignores AppleDouble sidecar files in source-pack and discovery-record areas", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    const timestamp = "2026-06-25T08:30:00.000Z";
+
+    await writeSourcePack(
+      "provider-blogs",
+      {
+        id: "provider-blogs",
+        name: "Provider Blogs",
+        enabled: true,
+        rss_feeds: ["https://openai.com/news/rss.xml"],
+        web_search_queries: ["site:openai.com/index GPT model release"],
+        source_type: "provider_blog",
+        trajectory_hints: ["provider_releases"],
+        cadence: "manual",
+        trusted_domains: ["openai.com"],
+        excluded_domains: [],
+        dedupe_strategy: "normalized_url",
+        notes: "Minimal smoke-test source pack.",
+        created_at: timestamp,
+        updated_at: timestamp
+      },
+      { rootDir }
+    );
+    await writeDiscoveryRecord(
+      "disc-provider-blog",
+      {
+        id: "disc-provider-blog",
+        run_id: "run-1",
+        source_pack_id: "provider-blogs",
+        discovered_url: "https://openai.com/index/example-release",
+        normalized_url: "https://openai.com/index/example-release",
+        canonical_url: "https://openai.com/index/example-release",
+        title: "Example release",
+        discovery_method: "rss",
+        reason_found: "Matched provider RSS feed.",
+        source_type: "provider_blog",
+        trajectory_classification: ["provider_releases"],
+        duplicate_status: "new",
+        confidence: "observed",
+        status: "discovered",
+        errors: [],
+        created_at: timestamp,
+        updated_at: timestamp
+      },
+      { rootDir }
+    );
+
+    await writeFile(join(rootDir, ".curation", "source-packs", "._provider-blogs.json"), "metadata");
+    await writeFile(join(rootDir, ".curation", "discovery-records", "._disc-provider-blog.json"), "metadata");
+
+    expect((await readCurationRecords("source-packs", { rootDir })).map((record) => record.id)).toEqual(["provider-blogs"]);
+    expect((await readCurationRecords("discovery-records", { rootDir })).map((record) => record.id)).toEqual(["disc-provider-blog"]);
   });
 });
