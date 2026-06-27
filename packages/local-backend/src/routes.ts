@@ -51,6 +51,15 @@ function corsHeaders(request: Request, preflight = false): Record<string, string
   return headers;
 }
 
+function isProtectedApiRequest(request: Request) {
+  const origin = request.headers.get("origin");
+  if (origin && origin !== workbenchOrigin) {
+    return true;
+  }
+
+  return request.headers.get("sec-fetch-site") === "cross-site";
+}
+
 function createJson(request: Request) {
   return function json(data: unknown, init: ResponseInit = {}) {
     return new Response(`${JSON.stringify(data, null, 2)}\n`, {
@@ -201,6 +210,10 @@ export async function handleApiRequest(request: Request, context: RouteContext):
   const url = new URL(request.url);
   const options = { rootDir: context.rootDir, now: context.now };
   const json = createJson(request);
+
+  if (url.pathname.startsWith("/api/") && isProtectedApiRequest(request)) {
+    return json({ error: "forbidden" }, { status: 403 });
+  }
 
   if (request.method === "OPTIONS" && url.pathname.startsWith("/api/")) {
     return new Response(null, {

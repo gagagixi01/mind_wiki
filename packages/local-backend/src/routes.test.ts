@@ -139,7 +139,50 @@ describe("local backend routes", () => {
     expect(response.headers.get("access-control-allow-headers")).toContain("content-type");
   });
 
-  it("starts discovery through injected runner", async () => {
+  it("rejects discovery runs from disallowed origins before invoking the runner", async () => {
+    const runner = vi.fn().mockResolvedValue({ outputRefs: [], exitCode: 0 });
+    const response = await handleApiRequest(
+      new Request("http://127.0.0.1:8001/api/pipeline/discovery/run", {
+        method: "POST",
+        headers: {
+          origin: "http://evil.example"
+        }
+      }),
+      {
+        rootDir: await makeRoot(),
+        now: () => new Date("2026-06-25T00:00:00.000Z"),
+        runner
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: "forbidden" });
+    expect(runner).not.toHaveBeenCalled();
+  });
+
+  it("rejects discovery runs marked as cross-site fetches", async () => {
+    const runner = vi.fn().mockResolvedValue({ outputRefs: [], exitCode: 0 });
+    const response = await handleApiRequest(
+      new Request("http://127.0.0.1:8001/api/pipeline/discovery/run", {
+        method: "POST",
+        headers: {
+          origin: workbenchOrigin,
+          "sec-fetch-site": "cross-site"
+        }
+      }),
+      {
+        rootDir: await makeRoot(),
+        now: () => new Date("2026-06-25T00:00:00.000Z"),
+        runner
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: "forbidden" });
+    expect(runner).not.toHaveBeenCalled();
+  });
+
+  it("allows originless discovery runs through the injected runner", async () => {
     const runner = vi.fn().mockResolvedValue({ outputRefs: [], exitCode: 0 });
     const response = await handleApiRequest(
       new Request("http://127.0.0.1:8001/api/pipeline/discovery/run", { method: "POST" }),
