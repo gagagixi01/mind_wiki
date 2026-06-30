@@ -7,10 +7,18 @@ export const metadata: Metadata = {
   description: "中文优先的 AI 进展研究索引，聚合已批准的事件、来源、轨迹与周报。"
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+const localRuntime = process.env.NODE_ENV !== "production";
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  let body: React.ReactNode = children;
+  if (localRuntime) {
+    const { AppChrome } = await import("@/components/app-chrome");
+    body = <AppChrome>{children}</AppChrome>;
+  }
+
   return (
     <html lang="zh-CN">
-      <body>{children}</body>
+      <body>{body}</body>
     </html>
   );
 }

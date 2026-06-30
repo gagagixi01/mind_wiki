@@ -40,14 +40,10 @@ function assertAllowedSkill(skillName: string): asserts skillName is AllowedPipe
   }
 }
 
-function runnerEnv(options: { codexHome: string; userHome: string }) {
-  return {
-    ...Object.fromEntries(
-      forwardedEnv.flatMap((key) => (process.env[key] ? [[key, process.env[key]]] : []))
-    ),
-    CODEX_HOME: options.codexHome,
-    HOME: options.userHome
-  };
+function runnerEnv() {
+  return Object.fromEntries(
+    forwardedEnv.flatMap((key) => (process.env[key] ? [[key, process.env[key]]] : []))
+  );
 }
 
 function outputRefs(runId: string) {
@@ -103,7 +99,7 @@ function failureSuggestedAction(code: FailureCode) {
     case "command_timeout":
       return "检查本地网络、搜索和抽取服务后重试。";
     case "model_api_failure":
-      return "检查 OpenAI API 认证、网络连通性和模型配置后重试。";
+      return "检查本地 Codex CLI 认证、网络连通性和模型配置后重试。";
     case "malformed_ai_output":
       return "查看本地输出和状态文件后重试。";
     default:
@@ -197,18 +193,14 @@ export async function runCodexSkill(options: CodexRunnerOptions): Promise<CodexR
   const inputDir = join(options.rootDir, ".curation", "pipeline-runs", options.runId);
   const outputDir = join(options.rootDir, ".curation", "agent-outputs", options.runId);
   const discoveryRecordsDir = join(options.rootDir, ".curation", "discovery-records");
-  const codexHome = join(options.rootDir, ".curation", "codex-home", options.runId);
-  const userHome = join(options.rootDir, ".curation", "codex-user-home", options.runId);
   await Promise.all([
     mkdir(inputDir, { recursive: true }),
-    mkdir(outputDir, { recursive: true }),
-    mkdir(codexHome, { recursive: true }),
-    mkdir(userHome, { recursive: true })
+    mkdir(outputDir, { recursive: true })
   ]);
 
   const inputPath = join(inputDir, "input.json");
   await writeFile(inputPath, `${JSON.stringify(options.input, null, 2)}\n`, "utf8");
-  const env = runnerEnv({ codexHome, userHome });
+  const env = runnerEnv();
 
   try {
     await readFile(join(options.rootDir, ".agents", "skills", options.skillName, "SKILL.md"), "utf8");
@@ -235,7 +227,6 @@ export async function runCodexSkill(options: CodexRunnerOptions): Promise<CodexR
       [
         "exec",
         "--ephemeral",
-        "--ignore-user-config",
         "-C",
         options.rootDir,
         prompt

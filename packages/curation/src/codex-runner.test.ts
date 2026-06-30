@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, stat, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -73,7 +73,7 @@ describe("codex runner", () => {
     );
   });
 
-  it("passes isolated-state flags and an explicit root directory to codex exec", async () => {
+  it("passes ephemeral mode and an explicit root directory to codex exec", async () => {
     const rootDir = await makeRoot();
     const execaImpl = vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 });
 
@@ -88,12 +88,13 @@ describe("codex runner", () => {
 
     expect(execaImpl).toHaveBeenCalledWith(
       "codex",
-      expect.arrayContaining(["exec", "--ephemeral", "--ignore-user-config", "-C", rootDir]),
+      expect.arrayContaining(["exec", "--ephemeral", "-C", rootDir]),
       expect.any(Object)
     );
+    expect(execaImpl.mock.calls[0]?.[1]).not.toContain("--ignore-user-config");
   });
 
-  it("runs codex with writable run-scoped HOME and CODEX_HOME", async () => {
+  it("does not hide local Codex CLI config or auth homes", async () => {
     const rootDir = await makeRoot();
     const execaImpl = vi.fn().mockResolvedValue({ stdout: "ok", stderr: "", exitCode: 0 });
 
@@ -106,17 +107,13 @@ describe("codex runner", () => {
       execaImpl
     });
 
-    const codexHome = join(rootDir, ".curation", "codex-home", "run-home");
-    const userHome = join(rootDir, ".curation", "codex-user-home", "run-home");
-    expect((await stat(codexHome)).isDirectory()).toBe(true);
-    expect((await stat(userHome)).isDirectory()).toBe(true);
     expect(execaImpl).toHaveBeenCalledWith(
       "codex",
       expect.any(Array),
       expect.objectContaining({
-        env: expect.objectContaining({
-          CODEX_HOME: codexHome,
-          HOME: userHome
+        env: expect.not.objectContaining({
+          CODEX_HOME: expect.any(String),
+          HOME: expect.any(String)
         })
       })
     );
@@ -312,5 +309,6 @@ describe("codex runner", () => {
     expect(result.exitCode).toBe(1);
     expect(result.failure?.code).toBe("model_api_failure");
     expect(result.failure?.message_zh).toBe("模型 API 调用失败。");
+    expect(result.failure?.suggested_next_action).toBe("检查本地 Codex CLI 认证、网络连通性和模型配置后重试。");
   });
 });

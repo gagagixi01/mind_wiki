@@ -1,0 +1,36 @@
+---
+id: "2026-06-26-gemini-nano-frozen-mtp"
+title: "Google 用冻结 MTP 加速端侧 Gemini Nano"
+date: "2026-06-26"
+type: "architecture"
+summary: "Google Research 介绍了一种把 Multi-Token Prediction 追加到冻结 Gemini Nano v3 模型上的方法，通过共享主模型状态和 KV cache，让 Pixel 端侧生成更快、更省内存。"
+why_it_matters: "端侧模型的瓶颈常常是内存、功耗和延迟；如果不重训主模型也能提速，隐私友好的本地 AI 功能会更容易规模化。"
+trajectories:
+  - "llm_architecture"
+  - "provider_releases"
+sources:
+  - title: "Accelerating Gemini Nano models on Pixel with frozen Multi-Token Prediction"
+    url: "https://research.google/blog/accelerating-gemini-nano-models-on-pixel-with-frozen-multi-token-prediction"
+    source_type: "blog"
+confidence: "observed"
+watchlist: false
+providers:
+  - "Google"
+related_events:
+  - "2026-06-24-nvidia-nemo-automodel-transformer-finetuning"
+  - "2026-06-24-openai-broadcom-llm-optimized-inference-chip"
+causal_links:
+  - source_event_id: "2026-06-26-gemini-nano-frozen-mtp"
+    target_concept: "端侧推理成本下降"
+    relationship_type: "accelerated"
+    explanation: "冻结主模型并追加轻量 MTP head，可以把效率优化推到已部署端侧模型上，降低重新训练和维护多套 drafter 的成本。"
+    confidence: "observed"
+    sources:
+      - title: "Accelerating Gemini Nano models on Pixel with frozen Multi-Token Prediction"
+        url: "https://research.google/blog/accelerating-gemini-nano-models-on-pixel-with-frozen-multi-token-prediction"
+        source_type: "blog"
+---
+
+这条更新和芯片、微调工具链是一组信号：AI 能力正在向成本曲线的细处下沉。
+
+它的价值不是“又快了一点”，而是把端侧部署里最麻烦的几件事合在一起处理：不改主模型、不复制 KV cache、不为每个任务维护独立 drafter，同时仍然让用户看到更快的生成体验。

@@ -176,6 +176,19 @@ describe("approved content loaders", () => {
     expect(content.weeks[0]?.headline_event_ids).toEqual(["2026-06-01-transformer-update"]);
     expect(content.events[0]?.id).toBe("2026-06-01-transformer-update");
   });
+
+  it("fails when weekly briefs reference events outside their natural week", async () => {
+    const contentDir = await makeContentRoot();
+    await writeFile(
+      join(contentDir, "approved", "events", "event.mdx"),
+      eventMdx({ date: "2026-06-08" })
+    );
+    await writeFile(join(contentDir, "approved", "weeks", "week.mdx"), weekMdx());
+
+    await expect(loadApprovedContent({ contentDir })).rejects.toThrow(
+      /^approved\/weeks\/week\.mdx: event IDs outside week range 2026-06-01 to 2026-06-07: 2026-06-01-transformer-update/
+    );
+  });
 });
 
 describe("duplicate detection", () => {

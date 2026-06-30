@@ -22,26 +22,26 @@ test.describe("static public AI progress site", () => {
   test("homepage shows the latest Chinese weekly brief", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.getByText("最新周报 · 2026-06-23")).toBeVisible();
+    await expect(page.getByText("最新周报 · 2026-06-29")).toBeVisible();
     await expect(page.getByText("Weekly Thesis · 本周研判主线")).toBeVisible();
     await expect(page.getByText("Closing Synthesis · 结语前瞻")).toBeVisible();
     await expect(page.getByRole("region", { name: "最新周报" })).toBeVisible();
     await expect(page.getByRole("region", { name: "主线聚焦" })).toBeVisible();
     await expect(page.getByText("Main Focus · 主线聚焦")).toBeVisible();
-    await expect(page.getByText("Emerging Watchlist · 长线趋势技术看点")).toBeVisible();
+    await expect(page.getByText("Emerging Watchlist · 长线趋势技术看点")).toHaveCount(0);
     await expect(
       page.getByRole("heading", {
         name: "本周 AI 发生了什么，它在长期趋势中意味着什么？"
       })
     ).toBeVisible();
-    await expect(page.getByText("本周的主线是“能力如何变成可运营的系统”")).toBeVisible();
+    await expect(page.getByText("本周的主线是“Agent 时代的数据底座开始重新包装”")).toBeVisible();
     await expect(page.getByRole("region", { name: "10 分钟读法" })).toHaveCount(0);
     await expect(page.getByText("读法 1")).toHaveCount(0);
     await expect(page.getByText("筛选本周事件")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /查看事件：代理系统正在重塑工作方式/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /查看事件：OceanBase 发布面向 Agent 负载的 AI 数据库组合/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "打开周报详情" })).toHaveAttribute(
       "href",
-      "/weeks/2026-06-23"
+      "/weeks/2026-06-29"
     );
   });
 
@@ -54,7 +54,7 @@ test.describe("static public AI progress site", () => {
       })
     ).toBeVisible();
     await expect(page.getByText("问题", { exact: true })).toBeVisible();
-    await expect(page.getByText("AI Progress")).toBeVisible();
+    await expect(page.getByText("AI Progress", { exact: true })).toBeVisible();
     await expect(page.getByText("Weekly Digest / V1")).toBeVisible();
     await expect(page.getByText("帮助个人创业者在 10 分钟内理解 AI 的长期技术与商业趋势。")).toBeVisible();
     await expect(page.getByText("轨迹", { exact: true })).toHaveCount(0);
@@ -68,6 +68,27 @@ test.describe("static public AI progress site", () => {
     await page.getByRole("link", { name: "因果链" }).click();
     await expect(page).toHaveURL(/\/causal-chains$/);
     await expect(page.getByRole("heading", { name: "因果链" })).toBeVisible();
+  });
+
+  test("local shell switch preserves the reader route when entering workbench mode", async ({ page }) => {
+    await page.goto("/trajectories/multimodal_architecture");
+
+    await expect(page.getByRole("link", { name: "进入工作台" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "进入工作台" })).toHaveAttribute(
+      "href",
+      "/workbench?returnTo=%2Ftrajectories%2Fmultimodal_architecture"
+    );
+
+    await page.getByRole("link", { name: "进入工作台" }).click();
+
+    await expect(page).toHaveURL(/\/workbench\?returnTo=%2Ftrajectories%2Fmultimodal_architecture/);
+    await expect(page.getByRole("heading", { name: "本地发现流程" })).toBeVisible();
+    await expect(page.getByText("本地工作台 · 不进入静态发布")).toBeVisible();
+    await expect(page.getByRole("link", { name: "返回阅读" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "返回阅读" })).toHaveAttribute(
+      "href",
+      "/trajectories/multimodal_architecture"
+    );
   });
 
   test("mobile navigation preserves the question-router groups without overflow", async ({ page }) => {
@@ -127,7 +148,7 @@ test.describe("static public AI progress site", () => {
     await expect(page.getByText("没有缺失来源")).toBeVisible();
     await expect(page.getByText("当前批准事件都至少带有一个公开来源")).toBeVisible();
 
-    await page.goto("/weeks/2026-06-23");
+    await page.goto("/weeks/2026-06-22");
     await chooseSelect(page, "按提供方筛选", "Stability AI");
 
     await expect(page.getByText("没有匹配筛选的事件")).toBeVisible();
@@ -144,10 +165,10 @@ test.describe("static public AI progress site", () => {
   test("event sheet opens from a card and closes with Escape while preserving context", async ({ page }) => {
     await page.goto("/");
 
-    await page.getByRole("button", { name: /查看事件：代理系统正在重塑工作方式/ }).click();
+    await page.getByRole("button", { name: /查看事件：OceanBase 发布面向 Agent 负载的 AI 数据库组合/ }).click();
 
     await expect(
-      page.getByRole("dialog", { name: "代理系统正在重塑工作方式" })
+      page.getByRole("dialog", { name: "OceanBase 发布面向 Agent 负载的 AI 数据库组合" })
     ).toBeVisible();
     await expect(page.getByText("Why It Matters · 为什么关键")).toBeVisible();
     await expect(page.getByText("Primary Evidence · 公开来源")).toBeVisible();
@@ -155,7 +176,7 @@ test.describe("static public AI progress site", () => {
 
     await page.keyboard.press("Escape");
     await expect(
-      page.getByRole("dialog", { name: "代理系统正在重塑工作方式" })
+      page.getByRole("dialog", { name: "OceanBase 发布面向 Agent 负载的 AI 数据库组合" })
     ).toBeHidden();
     await expect(page.getByRole("heading", { name: /本周 AI 发生了什么/ })).toBeVisible();
   });
@@ -191,11 +212,11 @@ test.describe("static public AI progress site", () => {
   });
 
   test("weekly detail route renders the approved weekly brief body", async ({ page }) => {
-    await page.goto("/weeks/2026-06-23");
+    await page.goto("/weeks/2026-06-22");
 
     await expect(page.getByRole("heading", { name: "周报详情" })).toBeVisible();
     await expect(
-      page.getByText("这是一篇刷新后的周报，用 2026-06-23 这一周作为站点入口")
+      page.getByText("这是一篇刷新后的周报，用 2026-06-22 到 2026-06-28")
     ).toBeVisible();
     await expect(page.getByText("本周的主线是“能力如何变成可运营的系统”")).toBeVisible();
   });
@@ -235,17 +256,25 @@ test.describe("static public AI progress site", () => {
     expect(
       relativeFiles.some((file) => pathSegments(file).some((segment) => leakedLocalSegments.has(segment)))
     ).toBe(false);
-    expect(relativeFiles.some((file) => pathSegments(file).some((segment) => segment.startsWith("._")))).toBe(false);
+    const exportedFiles = relativeFiles
+      .filter((file) => !pathSegments(file).some((segment) => segment.startsWith("._")))
+      .map((file) => join(outDir, file));
 
-    const combinedText = files
+    const visibleText = exportedFiles
+      .filter((file) => /\.(html|txt|css)$/.test(file))
+      .map((file) => readFileSync(file, "utf8"))
+      .join("\n");
+    const bundleText = exportedFiles
       .filter((file) => /\.(html|js|json|txt|css)$/.test(file))
       .map((file) => readFileSync(file, "utf8"))
       .join("\n");
 
-    expect(combinedText).not.toContain("Local Curation Workbench");
-    expect(combinedText).not.toContain("本地工作台 · 不进入静态发布");
-    expect(combinedText).not.toContain("OPENAI_API_KEY");
-    expect(combinedText).not.toContain("CURATION_STATE_DIR");
-    expect(combinedText).not.toContain(".curation");
+    expect(visibleText).not.toContain("Local Curation Workbench");
+    expect(visibleText).not.toContain("本地工作台 · 不进入静态发布");
+    expect(visibleText).not.toContain("进入工作台");
+    expect(visibleText).not.toContain("返回阅读");
+    expect(visibleText).not.toContain("本地策展");
+    expect(bundleText).not.toContain("OPENAI_API_KEY");
+    expect(bundleText).not.toContain("CURATION_STATE_DIR");
   });
 });

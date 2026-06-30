@@ -347,3 +347,50 @@ Expected: PASS.
 git add apps/workbench/src/App.tsx apps/workbench/src/styles.css
 git commit -m "feat: show workbench pipeline failures"
 ```
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAR | Outlined core scope (thesis, headlines, causal view). |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX Gaps | 1 | ISSUES_OPEN | Reviewed the curation workbench UI/UX. Gaps in IA, mobile safety, typography, and state coverage were identified and fixed in the design. |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
+
+- **UNRESOLVED:** 0
+- **VERDICT:** Design Review completed with open issues (resolved in the design spec, pending implementation). CEO Review CLEAR.
+
+### DESIGN PLAN REVIEW — COMPLETION SUMMARY
+
++====================================================================+
+|         DESIGN PLAN REVIEW — COMPLETION SUMMARY                    |
+|--------------------------------------------------------------------|
+| System Audit         | No DESIGN.md found (gap identified)         |
+| Step 0               | Initial Rating: 6/10                        |
+| Pass 1  (Info Arch)  | 5/10 → 10/10 after fixes                    |
+| Pass 2  (States)     | 7/10 → 10/10 after fixes                    |
+| Pass 3  (Journey)    | 6/10 → 10/10 after fixes                    |
+| Pass 4  (AI Slop)    | 5/10 → 10/10 after fixes                    |
+| Pass 5  (Design Sys) | 3/10 → 10/10 after fixes                    |
+| Pass 6  (Responsive) | 5/10 → 10/10 after fixes                    |
+| Pass 7  (Decisions)  | 2 resolved, 0 deferred                     |
+|--------------------------------------------------------------------|
+| NOT in scope         | Written (0 items)                           |
+| What already exists  | apps/site/app/globals.css                   |
+| TODOS.md updates     | 2 items proposed and accepted               |
+| Approved Mockups     | 0 generated (design binary not available)   |
+| Decisions made       | 8 added to plan                             |
+| Decisions deferred   | 0                                           |
+| Overall design score | 6/10 → 10/10                                 |
++====================================================================+
+
+### Design Decisions Added to Plan
+1. **Workspace Navigation Tabs (Pass 1):** Segment the workbench layout into three sequential workflow tabs: Ingestion & Discovery, Curation & Review, and Brief Assembly to reduce visual clutter and cognitive load.
+2. **Weekly Brief Empty State (Pass 2):** When no approved events exist, display a clean Empty State component with a button redirecting the curator to the Curation & Review tab to approve event drafts, preventing empty publishes.
+3. **In-Progress Extraction Telemetry (Pass 3):** During article crawling and parsing, display the active URL/article title currently being processed inline, providing visual reassurance and preventing false reports of freezing.
+4. **App UI Clean-Up (Pass 4):** Delete the redundant `hero-band` happy-talk copy. Align typography and components with a professional dark slate/zinc neutral theme.
+5. **Establish Design Tokens (Pass 5):** Create `DESIGN.md` in the root containing unified font, spacing (8px base grid), and semantic color definitions (slate, emerald, rose, amber).
+6. **Mobile Curation Layout (Pass 6):** On viewports under 768px, replace wide multi-column tables and candidate grids with stacked card layouts and touch targets of at least 48px to prevent horizontal scrolling and misclicks.
+7. **Custom Preset Validation (Pass 7):** Disable the "Run discovery" action button and show a validation tooltip if "Custom" preset is selected but zero source packs are checked.
+8. **Offline/Demo Warning (Pass 7):** Display a prominent orange warning banner at the top of the viewport when the local backend is unavailable, notifying the curator that modifications are in offline/demo mode and will be lost on refresh.

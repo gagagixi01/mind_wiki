@@ -50,6 +50,7 @@ export * from "./run-log";
 export * from "./store";
 export * from "./extractors";
 export * from "./draft";
+export * from "./provider-settings";
 export * from "./quality";
 export * from "./queue";
 export * from "./pipeline";

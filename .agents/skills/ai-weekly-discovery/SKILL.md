@@ -18,6 +18,7 @@ Follow `references/discovery-output-contract.md`.
 Rules:
 - Do not write `content/approved`.
 - Do not install skills from ClawHub or public registries.
+- If run input includes `source_pack_ids`, only read source packs whose ids are listed there for that run.
 - Use RSS and local-first SearXNG search only when configured by backend environment.
 - Normalize URLs, dedupe candidates, classify trajectories, and preserve `reason_found`.
 - Surface named failures instead of silently dropping candidates.

@@ -164,8 +164,8 @@ describe("content schemas", () => {
 
     expect(
       weeklyBriefSchema.safeParse({
-        week_start: "2028-02-29",
-        week_end: "2028-03-06",
+        week_start: "2028-02-28",
+        week_end: "2028-03-05",
         thesis: "Valid leap dates should pass.",
         headline_event_ids: [],
         watchlist_event_ids: [],
@@ -297,6 +297,45 @@ describe("content schemas", () => {
         headline_event_ids: [],
         watchlist_event_ids: [],
         closing_synthesis: "Weekly briefs must span exactly seven inclusive days."
+      }).success
+    ).toBe(false);
+  });
+
+  it("accepts weekly briefs that use Monday-to-Sunday natural weeks", () => {
+    expect(
+      weeklyBriefSchema.safeParse({
+        week_start: "2026-06-22",
+        week_end: "2026-06-28",
+        thesis: "Natural weeks should start on Monday and end on Sunday.",
+        headline_event_ids: [],
+        watchlist_event_ids: [],
+        closing_synthesis: "The brief aligns with the calendar week."
+      }).success
+    ).toBe(true);
+  });
+
+  it("rejects Tuesday-to-Monday weekly briefs", () => {
+    expect(
+      weeklyBriefSchema.safeParse({
+        week_start: "2026-06-23",
+        week_end: "2026-06-29",
+        thesis: "Tuesday-to-Monday intervals are not natural weeks.",
+        headline_event_ids: [],
+        watchlist_event_ids: [],
+        closing_synthesis: "The brief must align to Monday through Sunday."
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects Sunday-to-Saturday weekly briefs", () => {
+    expect(
+      weeklyBriefSchema.safeParse({
+        week_start: "2026-06-21",
+        week_end: "2026-06-27",
+        thesis: "Sunday-to-Saturday intervals are not the chosen natural week.",
+        headline_event_ids: [],
+        watchlist_event_ids: [],
+        closing_synthesis: "The brief must use ISO-style Monday through Sunday."
       }).success
     ).toBe(false);
   });

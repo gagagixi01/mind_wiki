@@ -1,0 +1,37 @@
+---
+id: "2026-06-25-github-copilot-agentic-harness"
+title: "GitHub 评估 Copilot 代理式 Harness 的性能和效率"
+date: "2026-06-25"
+type: "benchmark"
+summary: "GitHub 公开评估 Copilot agentic harness 在多个软件工程基准上的任务完成率和 token 效率，并强调同一套 harness 正支撑 Copilot CLI、Copilot app、代码审查等多个界面。"
+why_it_matters: "编码代理的竞争正在从单个模型分数扩展到工具编排、上下文管理、模型路由和 token 经济性。"
+trajectories:
+  - "commercial_forces"
+  - "provider_releases"
+sources:
+  - title: "Evaluating performance and efficiency of the GitHub Copilot agentic harness across models and tasks"
+    url: "https://github.blog/ai-and-ml/github-copilot/evaluating-performance-and-efficiency-of-the-github-copilot-agentic-harness-across-models-and-tasks"
+    source_type: "blog"
+confidence: "observed"
+watchlist: false
+providers:
+  - "GitHub"
+  - "Microsoft"
+related_events:
+  - "2026-06-25-agent-system-transforming-work"
+  - "2026-06-21-samsung-electronics-brings-chatgpt-and-codex-to-employees"
+causal_links:
+  - source_event_id: "2026-06-25-github-copilot-agentic-harness"
+    target_concept: "编码代理工程化"
+    relationship_type: "validated"
+    explanation: "当同一套代理 harness 被用于 CLI、应用和代码审查，编码代理的差异化就越来越依赖执行框架，而不只是底层模型。"
+    confidence: "observed"
+    sources:
+      - title: "Evaluating performance and efficiency of the GitHub Copilot agentic harness across models and tasks"
+        url: "https://github.blog/ai-and-ml/github-copilot/evaluating-performance-and-efficiency-of-the-github-copilot-agentic-harness-across-models-and-tasks"
+        source_type: "blog"
+---
+
+这条内容值得放进周报，是因为它把“模型能力”拆成了更工程化的部件：工具、上下文、MCP、路由、预算和不同操作系统下的真实任务表现。
+
+如果说 `2026-06-25-agent-system-transforming-work` 讲的是代理进入工作流，这条更像是在补充：代理真正跑起来之后，harness 会决定它能不能稳定、省 token、跨模型复用。
