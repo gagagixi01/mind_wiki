@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -686,6 +686,61 @@ describe("draftEventFromExtraction", () => {
       failure_type: "api_failure",
       validation_errors: [expect.stringContaining("HTTP 500")]
     });
+  });
+
+  it("uses the saved active workbench provider profile when env is omitted", async () => {
+    const rootDir = await makeWorkspaceRoot();
+    await mkdir(join(rootDir, ".curation"), { recursive: true });
+    await writeFile(
+      join(rootDir, ".curation", "workbench-provider-settings.json"),
+      `${JSON.stringify(
+        {
+          activeProfileId: "profile-2",
+          profiles: [
+            {
+              id: "profile-2",
+              label: "Sandbox",
+              baseUrl: "https://api.example.test/v1/",
+              apiKey: "saved-key",
+              modelId: "saved-model",
+              updatedAt: "2026-06-29T00:00:00.000Z"
+            }
+          ]
+        },
+        null,
+        2
+      )}\n`,
+      "utf8"
+    );
+
+    const requests: Array<{ url: string; init: { headers?: Record<string, string>; body?: string } }> = [];
+    const fetcher: DraftFetch = async (url, init) => {
+      requests.push({ url, init });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(validChineseEvent())
+              }
+            }
+          ]
+        }),
+        text: async () => ""
+      };
+    };
+
+    const result = await draftEventFromExtraction(extraction, {
+      rootDir,
+      fetcher
+    });
+
+    expect(result.status).toBe("success");
+    expect(requests[0]?.url).toBe("https://api.example.test/v1/chat/completions");
+    expect(requests[0]?.init.headers).toMatchObject({ Authorization: "Bearer saved-key" });
+    expect(JSON.parse(requests[0]?.init.body ?? "{}")).toMatchObject({ model: "saved-model" });
   });
 
   it("clears draft timeout timers after the API responds", async () => {

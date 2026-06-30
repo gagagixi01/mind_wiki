@@ -64,6 +64,9 @@ const parseUtcCalendarDate = (value: string) => {
   return date;
 };
 
+const isMondayToSundayWeek = (weekStart: Date, weekEnd: Date) =>
+  weekStart.getUTCDay() === 1 && weekEnd.getUTCDay() === 0;
+
 const dateStringSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD")
@@ -128,6 +131,14 @@ export const weeklyBriefSchema = z
   }, {
     message: "week_end must be exactly 6 days after week_start",
     path: ["week_end"]
+  })
+  .refine((brief) => {
+    const weekStart = parseUtcCalendarDate(brief.week_start);
+    const weekEnd = parseUtcCalendarDate(brief.week_end);
+    return weekStart !== null && weekEnd !== null && isMondayToSundayWeek(weekStart, weekEnd);
+  }, {
+    message: "week_start must be Monday and week_end must be Sunday",
+    path: ["week_start"]
   });
 
 export const extractionQualityReportSchema = z

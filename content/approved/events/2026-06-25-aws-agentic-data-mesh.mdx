@@ -1,0 +1,37 @@
+---
+id: "2026-06-25-aws-agentic-data-mesh"
+title: "AWS 提出面向 Agentic AI 的治理型数据网格"
+date: "2026-06-25"
+type: "infra"
+summary: "AWS 展示了如何用 S3 Tables、Lake Formation、S3 Vectors、AgentCore Gateway 和 Bedrock Guardrails 组合出可治理的数据网格，让代理在调用工具和查询数据时接受逐层授权。"
+why_it_matters: "企业代理系统的难点不只是模型能力，而是每一次工具调用、数据查询和输出合成都要可授权、可审计、可阻断。"
+trajectories:
+  - "commercial_forces"
+  - "provider_releases"
+sources:
+  - title: "Building agentic AI applications with a modern data mesh strategy on AWS"
+    url: "https://aws.amazon.com/blogs/machine-learning/building-agentic-ai-applications-with-a-modern-data-mesh-strategy-on-aws"
+    source_type: "blog"
+confidence: "observed"
+watchlist: false
+providers:
+  - "AWS"
+related_events:
+  - "2026-06-25-agent-system-transforming-work"
+  - "2026-06-18-enterprise-usage-analytics-spend-controls"
+  - "2026-06-23-advanced-ai-shared-standards"
+causal_links:
+  - source_event_id: "2026-06-25-aws-agentic-data-mesh"
+    target_concept: "代理系统的数据治理"
+    relationship_type: "enabled"
+    explanation: "当代理开始自主发现 schema、构造 SQL、调用工具和合成多源结果，授权控制就必须从 RAG 的单点过滤扩展到工具调用链路的每一层。"
+    confidence: "observed"
+    sources:
+      - title: "Building agentic AI applications with a modern data mesh strategy on AWS"
+        url: "https://aws.amazon.com/blogs/machine-learning/building-agentic-ai-applications-with-a-modern-data-mesh-strategy-on-aws"
+        source_type: "blog"
+---
+
+这条更新把“企业代理能不能上线”的问题讲得更具体：不是只有模型要安全，数据底座、工具网关、查询成本、权限边界和输出护栏都要一起工作。
+
+它和 OpenAI 的企业用量控制、共享标准放在一起看，会形成同一条主线：AI 进入组织之后，治理能力本身会变成基础设施。

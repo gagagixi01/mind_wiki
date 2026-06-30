@@ -17,7 +17,7 @@ export default defineConfig({
       name: "workbench",
       testMatch: /workbench\.spec\.ts/,
       use: {
-        baseURL: "http://127.0.0.1:5173"
+        baseURL: "http://127.0.0.1:3000/workbench"
       }
     }
   ],
@@ -29,8 +29,8 @@ export default defineConfig({
       timeout: 120_000
     },
     {
-      command: "pnpm dev:workbench",
-      url: "http://127.0.0.1:5173",
+      command: "pnpm dev:backend",
+      url: "http://127.0.0.1:8001/api/pipeline/status",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000
     }

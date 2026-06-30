@@ -4,6 +4,7 @@ import { eventSchema, type Event } from "@mind-wiki/core/schema";
 import { z } from "zod";
 
 import type { ExtractedSource } from "./extractors";
+import { resolveActiveWorkbenchProviderEnvironment } from "./provider-settings";
 import { appendRunLog, type RunLogOptions } from "./run-log";
 import {
   inspectCurationRecord,
@@ -84,7 +85,7 @@ export async function draftEventFromExtraction(
     return saveInvalidDraft(extraction, "api_failure", ["Cannot draft from failed extraction"], options);
   }
 
-  const config = readDraftConfig(options.env);
+  const config = await readDraftConfig(options.rootDir, options.env);
   if (!config.ok) {
     return saveInvalidDraft(extraction, "api_failure", config.errors, options);
   }
@@ -333,10 +334,16 @@ async function defaultDraftFetch(url: string, init: Parameters<DraftFetch>[1]) {
   return fetch(url, init) as Promise<DraftFetchResponse>;
 }
 
-function readDraftConfig(env: DraftEnvironment = process.env): DraftConfig {
-  const baseUrl = env.OPENAI_BASE_URL?.trim();
-  const apiKey = env.OPENAI_API_KEY?.trim();
-  const model = env.OPENAI_MODEL?.trim();
+async function readDraftConfig(rootDir: string | undefined, env?: DraftEnvironment): Promise<DraftConfig> {
+  const workbenchEnv = env ? undefined : await resolveActiveWorkbenchProviderEnvironment({ rootDir });
+  const source = env ?? workbenchEnv ?? {
+    OPENAI_BASE_URL: process.env.OPENAI_BASE_URL,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    OPENAI_MODEL: process.env.OPENAI_MODEL
+  };
+  const baseUrl = source.OPENAI_BASE_URL?.trim();
+  const apiKey = source.OPENAI_API_KEY?.trim();
+  const model = source.OPENAI_MODEL?.trim();
   const errors = [
     ...(baseUrl ? [] : ["OPENAI_BASE_URL is required"]),
     ...(apiKey ? [] : ["OPENAI_API_KEY is required"]),

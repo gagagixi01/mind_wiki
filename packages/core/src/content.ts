@@ -183,17 +183,28 @@ export async function loadApprovedContent(
 }
 
 export function assertWeeklyEventIds(events: Event[], weeks: WeeklyBrief[]) {
-  const eventIds = new Set(events.map((event) => event.id));
+  const eventsById = new Map(events.map((event) => [event.id, event]));
 
   for (const week of weeks) {
     const referencedIds = [...week.headline_event_ids, ...week.watchlist_event_ids];
-    const missingIds = referencedIds.filter((id) => !eventIds.has(id));
+    const missingIds = referencedIds.filter((id) => !eventsById.has(id));
+    const filePath =
+      "relativePath" in week && typeof week.relativePath === "string"
+        ? week.relativePath
+        : "weekly brief";
+
     if (missingIds.length > 0) {
-      const filePath =
-        "relativePath" in week && typeof week.relativePath === "string"
-          ? week.relativePath
-          : "weekly brief";
       throw new Error(`${filePath}: unknown event IDs: ${[...new Set(missingIds)].join(", ")}`);
+    }
+
+    const outOfRangeIds = referencedIds.filter((id) => {
+      const event = eventsById.get(id);
+      return event !== undefined && (event.date < week.week_start || event.date > week.week_end);
+    });
+    if (outOfRangeIds.length > 0) {
+      throw new Error(
+        `${filePath}: event IDs outside week range ${week.week_start} to ${week.week_end}: ${[...new Set(outOfRangeIds)].join(", ")}`
+      );
     }
   }
 }

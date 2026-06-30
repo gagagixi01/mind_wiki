@@ -12,19 +12,19 @@ pnpm lint
 pnpm build
 ```
 
-Run the public site:
+Run the unified browser entry:
 
 ```bash
 pnpm dev:site
 ```
 
-Run the local workbench:
+Run the local backend for curation actions:
 
 ```bash
-pnpm dev:workbench
+pnpm dev:backend
 ```
 
-The public site runs on `http://127.0.0.1:3000` by default. The workbench runs on `http://127.0.0.1:5173`.
+The browser entry runs on `http://127.0.0.1:3000` by default. The local backend runs on `http://127.0.0.1:8001`.
 
 ## Environment
 
@@ -58,9 +58,9 @@ Local curation state belongs under `.curation/` or another path configured by `C
 
 ## Local Workbench
 
-Use `pnpm dev:workbench` to open the local-only curation cockpit. It displays sample states for extraction progress, extraction failure, invalid draft output, duplicate sources, approved drafts, rejected drafts, quality reporting, causal-link editing, and weekly brief proposal building.
+Use `pnpm dev:site` and open `/workbench` to use the local-only curation cockpit from the unified browser entry. Run `pnpm dev:backend` alongside it when you want real local pipeline status and actions.
 
-The workbench currently updates React local state only. Adding a source in the UI does not fetch the URL, write files, or call OpenAI or other model/browser APIs.
+When the local backend is unavailable, the workbench can fall back to sample React state for UI previews. In the normal unified-entry flow, local curation actions and pipeline status come from `pnpm dev:backend`.
 
 ## Discovery Smoke Test
 
@@ -100,7 +100,7 @@ Do not deploy:
 - raw extracts, drafts, invalid outputs, rejected drafts, run logs, or quality reports
 - `.env.local` or real API credentials
 
-The workbench is a separate local Vite app and is not part of the public static site output.
+The workbench UI lives in the unified site shell and is not part of the public static site output. The legacy standalone Vite package is retained only as an internal harness.
 
 ## TODO
 

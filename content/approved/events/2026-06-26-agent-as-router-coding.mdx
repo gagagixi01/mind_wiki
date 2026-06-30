@@ -1,0 +1,36 @@
+---
+id: "2026-06-26-agent-as-router-coding"
+title: "Agent-as-a-Router 将编码任务路由改造成执行反馈循环"
+date: "2026-06-26"
+type: "paper"
+summary: "arXiv 论文提出 Agent-as-a-Router，把模型路由从一次性分类改成 Context-Action-Feedback-Context 循环，并用 CodeRouterBench 评估 8 个前沿模型在约 1 万个编码任务上的路由表现。"
+why_it_matters: "多模型时代的关键问题不只是哪个模型更强，而是谁能在成本、任务类型和执行反馈之间动态选择合适模型。"
+trajectories:
+  - "llm_architecture"
+  - "commercial_forces"
+sources:
+  - title: "Agent-as-a-Router: Agentic Model Routing for Coding Tasks"
+    url: "https://arxiv.org/abs/2606.22902"
+    source_type: "paper"
+confidence: "observed"
+watchlist: true
+providers:
+  - "arXiv"
+related_events:
+  - "2026-06-25-github-copilot-agentic-harness"
+  - "2026-06-25-agent-system-transforming-work"
+causal_links:
+  - source_event_id: "2026-06-26-agent-as-router-coding"
+    target_concept: "多模型代理路由"
+    relationship_type: "influenced"
+    explanation: "如果路由器能从真实执行反馈中积累经验，代理系统就可以把模型选择做成持续优化的控制层，而不是固定策略。"
+    confidence: "likely"
+    sources:
+      - title: "Agent-as-a-Router: Agentic Model Routing for Coding Tasks"
+        url: "https://arxiv.org/abs/2606.22902"
+        source_type: "paper"
+---
+
+这篇论文的信号在于，它没有把路由看成“先判断题型，再选模型”的静态问题，而是把执行结果也纳入循环。
+
+短期内它更适合作为 watchlist：论文和 benchmark 都还需要外部复现，但它指向了一个很实际的产品问题：当团队同时接入多个模型，调度层会变成新的能力边界。
